@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Users, Key, Save, AlertCircle, CheckCircle2, Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8003/api') + '/v1';
+
 const UserManagement = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
@@ -24,7 +26,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v1/users`, {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,7 +59,7 @@ const UserManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v1/users/${selectedUser.id}/set-password`, {
+      const response = await fetch(`${API_BASE_URL}/users/${selectedUser.id}/set-password`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

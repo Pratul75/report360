@@ -8,7 +8,7 @@ import { Loader2, UserPlus, AlertCircle, CheckCircle, Eye, EyeOff, ChevronLeft }
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001/api/v1';
+const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8003/api') + '/v1';
 
 const UserRegistration = () => {
   const navigate = useNavigate();
