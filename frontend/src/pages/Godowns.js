@@ -7,7 +7,7 @@ import { Plus, Edit, Trash2, MapPin, Phone, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
-const API_BASE_URL = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001') + '/api/v1';
+const API_BASE_URL = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8003/api') + '/v1';
 
 const Godowns = () => {
   const navigate = useNavigate();
