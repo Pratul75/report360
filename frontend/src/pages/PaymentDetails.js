@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { paymentsAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 const PaymentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: payment, isLoading } = useQuery({
     queryKey: ['payment', id],
@@ -29,7 +30,19 @@ const PaymentDetails = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-lg text-slate-600">Payment not found</p>
-          <Button onClick={() => navigate(-1)} className="mt-4">
+          <Button
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(
+                  location.state.from.pathname + (location.state.from.search || ''),
+                  { replace: true, state: { activeTab: location.state.activeTab } }
+                );
+              } else {
+                navigate('/vendor-dashboard');
+              }
+            }}
+            className="mt-4"
+          >
             Go Back
           </Button>
         </div>
@@ -68,7 +81,21 @@ const PaymentDetails = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            // Always go back to dashboard payments tab if not coming from dashboard
+            if (location.state && location.state.from && location.state.from.pathname.startsWith('/vendor-dashboard')) {
+              navigate(
+                location.state.from.pathname + (location.state.from.search || ''),
+                { replace: true, state: { activeTab: location.state.activeTab || 'payments' } }
+              );
+            } else {
+              navigate('/vendor-dashboard', { state: { activeTab: 'payments' } });
+            }
+          }}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">

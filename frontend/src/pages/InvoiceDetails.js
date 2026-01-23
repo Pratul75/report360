@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { invoicesAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { ArrowLeft, Download, FileText, Calendar, DollarSign, Building2, Briefca
 const InvoiceDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { data: invoice, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -59,7 +60,21 @@ const InvoiceDetails = () => {
     <div className="max-w-4xl mx-auto p-6">
       {/* Header Actions */}
       <div className="mb-6 flex items-center justify-between no-print">
-        <Button variant="outline" onClick={() => navigate(-1)} className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            // Always go back to dashboard invoices tab if not coming from dashboard
+            if (location.state && location.state.from && location.state.from.pathname.startsWith('/vendor-dashboard')) {
+              navigate(
+                location.state.from.pathname + (location.state.from.search || ''),
+                { replace: true, state: { activeTab: location.state.activeTab || 'invoices' } }
+              );
+            } else {
+              navigate('/vendor-dashboard', { state: { activeTab: 'invoices' } });
+            }
+          }}
+          className="flex items-center gap-2"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>

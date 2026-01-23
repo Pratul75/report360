@@ -6,9 +6,9 @@ import { Button } from '../components/ui/button';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Loader2, UserPlus, AlertCircle, CheckCircle, Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import api from '@/lib/api';
 
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8003/api') + '/v1';
+// const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8003/api') + '/v1';
 
 const UserRegistration = () => {
   const navigate = useNavigate();
@@ -28,10 +28,7 @@ const UserRegistration = () => {
   const { data: vendors } = useQuery({
     queryKey: ['vendors'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/vendors`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/vendors');
       return response.data;
     },
     enabled: formData.role === 'vendor'
@@ -40,22 +37,12 @@ const UserRegistration = () => {
   // Register user mutation
   const registerMutation = useMutation({
     mutationFn: async (data) => {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/users/register`,
-        data,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.post('/users/register', data);
       return response.data;
     },
     onSuccess: (data) => {
       toast.success(`User "${data.name}" registered successfully!`);
-      navigate('/settings'); // Navigate to settings or user list page
+      navigate('/settings');
     },
     onError: (error) => {
       console.error('Registration error:', error);

@@ -11,11 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Clock, CheckCircle, AlertCircle, Eye, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { accountsAPI, invoicesAPI, paymentsAPI } from '@/lib/api';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Accounts = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showAllInvoices, setShowAllInvoices] = useState(false);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const [approvingId, setApprovingId] = useState(null);
@@ -327,7 +328,7 @@ const Accounts = () => {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => navigate(`/invoices/${invoice.id}`)}
+                              onClick={() => navigate(`/invoices/${invoice.id}`, { state: { from: location } })}
                               className="flex items-center gap-1 mx-auto"
                             >
                               <FileText className="h-3 w-3" />

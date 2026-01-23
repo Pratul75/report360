@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { driverDashboardAPI } from '../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -26,6 +26,7 @@ import {
 const JourneyDetails = () => {
   const { driverId, date } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Get current user role
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -119,7 +120,17 @@ const JourneyDetails = () => {
   if (!journey) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
-        <Button onClick={() => navigate(-1)} variant="outline" className="mb-4">
+        <Button
+          onClick={() => {
+            if (location.state && location.state.from) {
+              navigate(location.state.from);
+            } else {
+              navigate(-1);
+            }
+          }}
+          variant="outline"
+          className="mb-4"
+        >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
@@ -216,7 +227,17 @@ const JourneyDetails = () => {
     <div className="container mx-auto p-4 max-w-6xl">
       {/* Header */}
       <div className="mb-6">
-        <Button onClick={() => navigate(-1)} variant="outline" className="mb-4">
+        <Button
+          onClick={() => {
+            if (location.state && location.state.from) {
+              navigate(location.state.from);
+            } else {
+              navigate(-1);
+            }
+          }}
+          variant="outline"
+          className="mb-4"
+        >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Button>

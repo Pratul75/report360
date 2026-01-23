@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { reportsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { saveAs } from 'file-saver';
 const ReportDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   const [deleting, setDeleting] = useState(false);
 
@@ -26,7 +27,11 @@ const ReportDetails = () => {
     setDeleting(true);
     try {
       await reportsAPI.delete(id);
-      navigate('/reports');
+      if (location.state && location.state.from) {
+        navigate(location.state.from);
+      } else {
+        navigate('/reports');
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to delete report');

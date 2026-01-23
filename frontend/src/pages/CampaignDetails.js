@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { campaignsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const CampaignDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   
   // Get current user role
@@ -31,7 +32,18 @@ const CampaignDetails = () => {
           {hasPermission('campaign.update') && (
             <Button onClick={() => navigate(`/campaigns/${id}/edit`)}>Edit</Button>
           )}
-          <Button variant="ghost" onClick={() => navigate('/campaigns')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from.pathname, { state: { activeTab: location.state.activeTab } });
+              } else {
+                navigate('/vendor-dashboard');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">

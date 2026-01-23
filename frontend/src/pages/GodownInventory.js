@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, ChevronLeft, AlertTriangle, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import api from '@/lib/api';
 
 const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8003/api') + '/v1';
 
@@ -29,10 +29,7 @@ const GodownInventory = () => {
   const { data: godown, isLoading: godownLoading, error: godownError, isError: godownIsError } = useQuery({
     queryKey: ['godown', godownId],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/godowns/${godownId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/godowns/${godownId}`);
       return response.data;
     },
   });
@@ -41,10 +38,7 @@ const GodownInventory = () => {
   const { data: items = [], isLoading: itemsLoading, error: itemsError, isError: itemsIsError } = useQuery({
     queryKey: ['inventory', godownId],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/inventory/godown/${godownId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/inventory/godown/${godownId}`);
       return response.data;
     },
   });
@@ -52,14 +46,11 @@ const GodownInventory = () => {
   // Create item mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const token = localStorage.getItem('token');
-      return await axios.post(`${API_BASE_URL}/inventory`, {
+      return await api.post(`/inventory`, {
         ...data,
         godown_id: parseInt(godownId),
         quantity: parseFloat(data.quantity),
         min_stock_level: parseFloat(data.min_stock_level),
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
       });
     },
     onSuccess: () => {
@@ -73,13 +64,11 @@ const GodownInventory = () => {
   // Update item mutation
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      const token = localStorage.getItem('token');
-      return await axios.patch(`${API_BASE_URL}/inventory/${editingId}`, {
+      return await api.patch(`/inventory/${editingId}`, {
         ...data,
-        quantity: data.quantity ? parseFloat(data.quantity) : undefined,
-        min_stock_level: data.min_stock_level ? parseFloat(data.min_stock_level) : undefined,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+        godown_id: parseInt(godownId),
+        quantity: parseFloat(data.quantity),
+        min_stock_level: parseFloat(data.min_stock_level),
       });
     },
     onSuccess: () => {
@@ -93,10 +82,7 @@ const GodownInventory = () => {
   // Delete item mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token');
-      return await axios.delete(`${API_BASE_URL}/inventory/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      return await api.delete(`/inventory/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['inventory', godownId]);

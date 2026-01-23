@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { clientsAPI, expensesAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const ClientDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
 
   const { data: client, isLoading: clientLoading } = useQuery({
@@ -34,7 +35,18 @@ const ClientDetails = () => {
           {hasPermission('client.update') && (
             <Button onClick={() => navigate(`/clients/${id}/edit`)}>Edit</Button>
           )}
-          <Button variant="ghost" onClick={() => navigate('/clients')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from);
+              } else {
+                navigate('/clients');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
 

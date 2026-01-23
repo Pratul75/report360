@@ -4,7 +4,7 @@ import { campaignsAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, MapPin, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -20,6 +20,7 @@ const statusColors = {
 
 const Campaigns = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { hasPermission } = usePermissions();
   
@@ -129,7 +130,13 @@ const Campaigns = () => {
                   </div>
                 )}
                 <div className="flex gap-2 mt-4">
-                  <Button variant="outline" className="flex-1" onClick={() => navigate(`/campaigns/${campaign.id}`)}>Manage Campaign</Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate(`/campaigns/${campaign.id}`, { state: { from: location } })}
+                  >
+                    Manage Campaign
+                  </Button>
                   {hasPermission('campaign.delete') && (
                     <Button
                       variant="destructive"

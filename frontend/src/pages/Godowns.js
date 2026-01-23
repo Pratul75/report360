@@ -5,9 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Trash2, MapPin, Phone, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
-
-const API_BASE_URL = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8003/api') + '/v1';
+import api from '@/lib/api';
 
 const Godowns = () => {
   const navigate = useNavigate();
@@ -26,10 +24,7 @@ const Godowns = () => {
   const { data: godowns = [], isLoading, error, isError } = useQuery({
     queryKey: ['godowns'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/godowns`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get('/godowns');
       return response.data;
     },
   });
@@ -37,10 +32,7 @@ const Godowns = () => {
   // Create godown mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const token = localStorage.getItem('token');
-      return await axios.post(`${API_BASE_URL}/godowns`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      return await api.post('/godowns', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['godowns']);
@@ -54,10 +46,7 @@ const Godowns = () => {
   // Update godown mutation
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      const token = localStorage.getItem('token');
-      return await axios.patch(`${API_BASE_URL}/godowns/${editingId}`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      return await api.patch(`/godowns/${editingId}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['godowns']);
@@ -69,13 +58,9 @@ const Godowns = () => {
     onError: () => toast.error('Failed to update godown'),
   });
 
-  // Delete godown mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const token = localStorage.getItem('token');
-      return await axios.delete(`${API_BASE_URL}/godowns/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      return await api.delete(`/godowns/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['godowns']);
@@ -90,7 +75,6 @@ const Godowns = () => {
       toast.error('Godown name is required');
       return;
     }
-
     if (editingId) {
       updateMutation.mutate(formData);
     } else {

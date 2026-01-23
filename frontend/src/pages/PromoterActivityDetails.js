@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { promoterActivitiesAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const PromoterActivityDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   
   // Get current user role
@@ -42,7 +43,17 @@ const PromoterActivityDetails = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/promoter-activities')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from);
+              } else {
+                navigate('/promoter-activities');
+              }
+            }}
+          >
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>
           <div>

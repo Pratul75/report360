@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { promotersAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/utils';
 const PromoterDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: promoter, isLoading } = useQuery({
     queryKey: ['promoter', id],
     queryFn: () => promotersAPI.getOne(id).then(res => res.data),
@@ -22,7 +23,18 @@ const PromoterDetails = () => {
         <h1 className="text-2xl font-bold">{promoter.name}</h1>
         <div className="flex gap-2">
           <Button onClick={() => navigate(`/promoters/${id}/edit`)}>Edit</Button>
-          <Button variant="ghost" onClick={() => navigate('/promoters')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from);
+              } else {
+                navigate('/promoters');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">

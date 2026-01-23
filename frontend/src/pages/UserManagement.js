@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, Key, Save, AlertCircle, CheckCircle2, Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-const API_BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:8003/api') + '/v1';
+import api from '@/lib/api';
 
 const UserManagement = () => {
   const navigate = useNavigate();
@@ -25,19 +24,8 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      } else {
-        setMessage({ type: 'error', text: 'Failed to load users' });
-      }
+      const response = await api.get('/users');
+      setUsers(response.data);
     } catch (error) {
       setMessage({ type: 'error', text: 'Error loading users' });
     }
@@ -58,32 +46,17 @@ const UserManagement = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/users/${selectedUser.id}/set-password`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ password: newPassword })
+      await api.post(`/users/${selectedUser.id}/set-password`, { password: newPassword });
+      setMessage({ 
+        type: 'success', 
+        text: `Password updated successfully for ${selectedUser.name}` 
       });
-
-      if (response.ok) {
-        setMessage({ 
-          type: 'success', 
-          text: `Password updated successfully for ${selectedUser.name}` 
-        });
-        setNewPassword('');
-        setShowPassword(false);
-        
-        // Auto-hide success message after 5 seconds
-        setTimeout(() => setMessage({ type: '', text: '' }), 5000);
-      } else {
-        const error = await response.json();
-        setMessage({ type: 'error', text: error.detail || 'Failed to update password' });
-      }
+      setNewPassword('');
+      setShowPassword(false);
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error updating password' });
+      setMessage({ type: 'error', text: error.response?.data?.detail || 'Failed to update password' });
     } finally {
       setLoading(false);
     }

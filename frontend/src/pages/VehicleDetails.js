@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { vehiclesAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { CloudCog } from 'lucide-react';
 const VehicleDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', id],
@@ -33,7 +34,18 @@ const VehicleDetails = () => {
           {hasPermission('vehicle.update') && (
             <Button onClick={() => navigate(`/vehicles/${id}/edit`)}>Edit</Button>
           )}
-          <Button variant="ghost" onClick={() => navigate('/vehicles')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from.pathname, { state: { activeTab: location.state.activeTab } });
+              } else {
+                navigate('/vendor-dashboard');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">

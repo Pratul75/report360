@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { vendorDashboardAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Users, Truck, FileText, DollarSign, Activity, Upload, UserPlus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useSmartNavigation } from '@/hooks/useSmartNavigation';
+import BackButton from '@/components/ui/BackButton';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import DriverBookingForm from '@/components/vendor/DriverBookingForm';
 import AssignmentsList from '@/components/vendor/AssignmentsList';
 
+import { useLocation } from 'react-router-dom';
+
 const VendorDashboard = () => {
-  const navigate = useNavigate();
+  const { navigateTo } = useSmartNavigation();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
+    // Restore tab from navigation state if present
+    useEffect(() => {
+      if (location.state && location.state.activeTab) {
+        setActiveTab(location.state.activeTab);
+      }
+    }, [location.state]);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -44,6 +54,8 @@ const VendorDashboard = () => {
           <h1 className="text-3xl font-bold text-slate-800">Vendor Dashboard</h1>
           <p className="text-slate-600">Manage your operations and track performance</p>
         </div>
+        {/* Optional: Show BackButton if you want a global back button at the top */}
+        {/* <BackButton fallbackPath="/" /> */}
       </div>
 
       {/* Summary Cards */}
@@ -265,7 +277,7 @@ const VendorDashboard = () => {
             ) : (
               assigned_campaigns?.map((campaign) => (
                 <Card key={campaign.id} className="overflow-hidden">
-                  <CardContent className="py-4">
+                  <CardContent className="px-6 pt-6 pb-4">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{campaign.name}</h3>
@@ -307,7 +319,11 @@ const VendorDashboard = () => {
                           <UserPlus className="w-4 h-4" />
                           Assign Driver
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/campaigns/${campaign.id}`)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigateTo(`/campaigns/${campaign.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                        >
                           View Details
                         </Button>
                       </div>
@@ -350,20 +366,24 @@ const VendorDashboard = () => {
         <TabsContent value="vehicles" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">My Vehicles</h2>
-            <Button onClick={() => navigate('/vehicles/new')}>
+            <Button onClick={() => navigateTo('/vehicles/new', { activeTab })}>
               <Upload className="mr-2 h-4 w-4" /> Add Vehicle
             </Button>
           </div>
           <div className="grid gap-4">
             {vehicles?.map((vehicle) => (
               <Card key={vehicle.id}>
-                <CardContent className="py-4">
+                <CardContent className="px-6 pt-6 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold">{vehicle.vehicle_number}</h3>
                       <p className="text-sm text-slate-600">{vehicle.vehicle_type}</p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/vehicles/${vehicle.id}`)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigateTo(`/vehicles/${vehicle.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                    >
                       View Details
                     </Button>
                   </div>
@@ -379,21 +399,25 @@ const VendorDashboard = () => {
         <TabsContent value="drivers" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">My Drivers</h2>
-            <Button onClick={() => navigate('/drivers/new')}>
+            <Button onClick={() => navigateTo('/drivers/new', { activeTab })}>
               <Upload className="mr-2 h-4 w-4" /> Add Driver
             </Button>
           </div>
           <div className="grid gap-4">
             {drivers?.map((driver) => (
               <Card key={driver.id}>
-                <CardContent className="py-4">
+                <CardContent className="px-6 pt-6 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold">{driver.name}</h3>
                       <p className="text-sm text-slate-600">{driver.phone}</p>
                       <p className="text-sm text-slate-600">License: {driver.license_number}</p>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/drivers/${driver.id}`)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigateTo(`/drivers/${driver.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                    >
                       View Details
                     </Button>
                   </div>
@@ -409,14 +433,14 @@ const VendorDashboard = () => {
         <TabsContent value="invoices" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">My Invoices</h2>
-            <Button onClick={() => navigate('/invoices/new')}>
+            <Button onClick={() => navigateTo('/invoices/new', { activeTab })}>
               <Upload className="mr-2 h-4 w-4" /> Upload Invoice
             </Button>
           </div>
           <div className="grid gap-4">
             {invoices?.map((invoice) => (
               <Card key={invoice.id}>
-                <CardContent className="py-4">
+                <CardContent className="px-6 pt-6 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold">{invoice.invoice_number}</h3>
@@ -431,7 +455,11 @@ const VendorDashboard = () => {
                         {invoice.status}
                       </span>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/invoices/${invoice.id}`)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigateTo(`/invoices/${invoice.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                    >
                       View Details
                     </Button>
                   </div>
@@ -446,7 +474,7 @@ const VendorDashboard = () => {
           <div className="grid gap-4">
             {payments?.map((payment) => (
               <Card key={payment.id}>
-                <CardContent className="py-4">
+                <CardContent className="px-6 pt-6 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-semibold">{formatCurrency(payment.amount)}</h3>
@@ -462,9 +490,15 @@ const VendorDashboard = () => {
                       }`}>
                         {payment.status}
                       </span>
-                    </div>                  <Button variant="outline" size="sm" onClick={() => navigate(`/payments/${payment.id}`)}>
-                    View Details
-                  </Button>                  </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigateTo(`/payments/${payment.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                    >
+                      View Details
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

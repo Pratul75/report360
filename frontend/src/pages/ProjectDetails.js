@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/utils';
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   const { data: project, isLoading } = useQuery({
     queryKey: ['project', id],
@@ -26,7 +27,18 @@ const ProjectDetails = () => {
           {hasPermission('project.update') && (
             <Button onClick={() => navigate(`/projects/${id}/edit`)}>Edit</Button>
           )}
-          <Button variant="ghost" onClick={() => navigate('/projects')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from);
+              } else {
+                navigate('/projects');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">

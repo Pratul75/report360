@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { vendorsAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const VendorDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   const { data: vendor, isLoading } = useQuery({
     queryKey: ['vendor', id],
@@ -26,7 +27,18 @@ const VendorDetails = () => {
           {hasPermission('vendor.update') && (
             <Button onClick={() => navigate(`/vendors/${id}/edit`)}>Edit</Button>
           )}
-          <Button variant="ghost" onClick={() => navigate('/vendors')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from);
+              } else {
+                navigate('/vendors');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">

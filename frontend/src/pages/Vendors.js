@@ -4,7 +4,7 @@ import { vendorsAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -12,6 +12,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const Vendors = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   
   const { data: vendors, isLoading } = useQuery({
@@ -77,7 +78,13 @@ const Vendors = () => {
                 {vendor.category && <p className="text-xs text-slate-500">Category: {vendor.category}</p>}
                 <p className="text-xs text-slate-500">Added: {formatDate(vendor.created_at)}</p>
                 <div className="flex gap-2 mt-4">
-                  <Button variant="outline" className="flex-1" onClick={() => navigate(`/vendors/${vendor.id}`)}>View Details</Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate(`/vendors/${vendor.id}`, { state: { from: location } })}
+                  >
+                    View Details
+                  </Button>
                   {hasPermission('vendor.delete') && (
                     <Button
                       variant="destructive"

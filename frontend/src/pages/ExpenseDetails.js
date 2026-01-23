@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { expensesAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const statusColors = {
 const ExpenseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   const { data: expense, isLoading, refetch } = useQuery({
     queryKey: ['expense', id],
@@ -59,7 +60,18 @@ const ExpenseDetails = () => {
               <Button onClick={handleReject} variant="destructive">Reject</Button>
             </>
           )}
-          <Button variant="ghost" onClick={() => navigate('/expenses')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from);
+              } else {
+                navigate('/expenses');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
 

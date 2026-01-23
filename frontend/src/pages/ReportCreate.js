@@ -5,6 +5,7 @@ import { reportsAPI, campaignsAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
+import api from '@/lib/api';
 
 const ReportCreate = () => {
   const navigate = useNavigate();
@@ -34,9 +35,8 @@ const ReportCreate = () => {
     }
     setFetchingGps(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/v1/daily-km-logs?campaign_id=${campaignId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await api.get(`/daily-km-logs`, {
+        params: { campaign_id: campaignId }
       });
       const logs = response.data;
       if (logs && logs.length > 0) {
@@ -251,7 +251,7 @@ const ReportCreate = () => {
             <div>
               <label className="block text-sm font-medium text-slate-700">GPS Data</label>
               <div className="flex gap-2 mb-2">
-                {/* <Button 
+                <Button 
                   type="button" 
                   variant="outline" 
                   size="sm"
@@ -259,8 +259,8 @@ const ReportCreate = () => {
                   disabled={fetchingGps || !campaignId}
                   className="text-xs"
                 >
-                  {fetchingGps ? 'Fetching...' : '📍 Fetch from Logs'} */}
-                {/* </Button> */}
+                  {fetchingGps ? 'Fetching...' : '📍 Fetch from Logs'}
+                </Button>
                 <Button 
                   type="button" 
                   variant="outline" 

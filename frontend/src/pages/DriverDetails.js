@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { driversAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const DriverDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = usePermissions();
   const { data: driver, isLoading } = useQuery({
     queryKey: ['driver', id],
@@ -26,7 +27,18 @@ const DriverDetails = () => {
           {hasPermission('driver.update') && (
             <Button onClick={() => navigate(`/drivers/${id}/edit`)}>Edit</Button>
           )}
-          <Button variant="ghost" onClick={() => navigate('/drivers')}>Back</Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              if (location.state && location.state.from) {
+                navigate(location.state.from.pathname, { state: { activeTab: location.state.activeTab } });
+              } else {
+                navigate('/vendor-dashboard');
+              }
+            }}
+          >
+            Back
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">
