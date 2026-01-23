@@ -6,10 +6,10 @@ from app.api.dependencies import get_current_active_user
 
 router = APIRouter(prefix="/upload", tags=["Upload"])
 
-REPORTS_UPLOAD_DIR = Path("/app/backend/uploads/reports")
+REPORTS_UPLOAD_DIR = Path("/uploads/reports")
 REPORTS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-VEHICLES_UPLOAD_DIR = Path("/app/backend/uploads/vehicles")
+VEHICLES_UPLOAD_DIR = Path("/uploads/vehicles")
 VEHICLES_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/report-photo")

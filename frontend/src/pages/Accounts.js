@@ -1,25 +1,61 @@
 import React, { useState } from 'react';
+// Enum values as per backend
+const PAYMENT_METHODS = [
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'cheque', label: 'Cheque' },
+  { value: 'upi', label: 'UPI' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'other', label: 'Other' },
+];
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Clock, CheckCircle, AlertCircle, Eye, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { accountsAPI, invoicesAPI } from '@/lib/api';
+import { accountsAPI, invoicesAPI, paymentsAPI } from '@/lib/api';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Accounts = () => {
   const navigate = useNavigate();
   const [showAllInvoices, setShowAllInvoices] = useState(false);
-  // Fetch accounts summary from API
-  const { data: accountsData, isLoading, error } = useQuery({
-    queryKey: ['accounts-summary'],
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [approvingId, setApprovingId] = useState(null);
+  const [payingId, setPayingId] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState({}); // Track payment method for each invoice
+
+  // Mark as Paid handler
+  const handleMarkAsPaid = async (invoice) => {
+    setPayingId(invoice.id);
+    // Default to first enum value if not set
+    const paymentMethod = paymentMethods[invoice.id] || PAYMENT_METHODS[0].value;
+    try {
+      await invoicesAPI.markAsPaid(invoice.id, paymentMethod);
+      await refetchInvoices();
+      await refetchSummary();
+    } catch (err) {
+      alert('Failed to mark as paid: ' + (err?.response?.data?.detail || err.message));
+    } finally {
+      setPayingId(null);
+    }
+  };
+  // Get current month date range
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  const fromDate = firstDay.toISOString().slice(0, 10);
+  const toDate = today.toISOString().slice(0, 10);
+
+  // Fetch accounts summary from API (filtered by current month)
+  const { data: accountsData, isLoading, error, refetch: refetchSummary } = useQuery({
+    queryKey: ['accounts-summary', fromDate, toDate],
     queryFn: async () => {
-      const response = await accountsAPI.getSummary();
+      const response = await accountsAPI.getSummary(fromDate, toDate);
       return response.data;
     }
   });
+  
 
+  
   // Fetch all invoices
-  const { data: invoicesData } = useQuery({
+  const { data: invoicesData, refetch: refetchInvoices } = useQuery({
     queryKey: ['all-invoices'],
     queryFn: async () => {
       const response = await invoicesAPI.getAll();
@@ -27,6 +63,20 @@ const Accounts = () => {
     },
     enabled: showAllInvoices
   });
+
+  // Approve invoice handler
+  const handleApprove = async (invoiceId) => {
+    setApprovingId(invoiceId);
+    try {
+      await invoicesAPI.approve(invoiceId);
+      await refetchInvoices();
+      await refetchSummary();
+    } catch (err) {
+      alert('Failed to approve invoice: ' + (err?.response?.data?.detail || err.message));
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   // Show loading state
   if (isLoading) {
@@ -145,8 +195,10 @@ const Accounts = () => {
                     <th className="text-left p-2 font-medium text-slate-700">Vendor</th>
                     <th className="text-right p-2 font-medium text-slate-700">Invoices</th>
                     <th className="text-right p-2 font-medium text-slate-700">Total Invoiced</th>
-                    <th className="text-right p-2 font-medium text-slate-700">Paid</th>
-                    <th className="text-right p-2 font-medium text-slate-700">Pending</th>
+                    <th className="text-right p-2 font-medium text-slate-700">Paid (Invoices)</th>
+                    <th className="text-right p-2 font-medium text-slate-700">Pending (Invoices)</th>
+                    <th className="text-right p-2 font-medium text-slate-700">Paid (Payments)</th>
+                    <th className="text-right p-2 font-medium text-slate-700">Pending (Payments)</th>
                     <th className="text-center p-2 font-medium text-slate-700">Actions</th>
                   </tr>
                 </thead>
@@ -158,6 +210,8 @@ const Accounts = () => {
                       <td className="p-2 text-right">₹{vendor.total_invoiced?.toLocaleString('en-IN')}</td>
                       <td className="p-2 text-right text-green-600">₹{vendor.invoice_paid?.toLocaleString('en-IN')}</td>
                       <td className="p-2 text-right text-orange-600">₹{vendor.invoice_pending?.toLocaleString('en-IN')}</td>
+                      <td className="p-2 text-right text-green-700">₹{vendor.payment_completed?.toLocaleString('en-IN') || 0}</td>
+                      <td className="p-2 text-right text-yellow-700">₹{vendor.payment_pending?.toLocaleString('en-IN') || 0}</td>
                       <td className="p-2 flex items-center justify-center"> 
                         <Button 
                         
@@ -255,7 +309,7 @@ const Accounts = () => {
                     {invoicesData.map((invoice) => (
                       <tr key={invoice.id} className="border-b hover:bg-slate-50">
                         <td className="p-2 font-medium">{invoice.invoice_number}</td>
-                        <td className="p-2">{invoice.vendor?.name || invoice.vendor?.id || 'N/A'}</td>
+                        <td className="p-2 font-medium">{invoice.vendor_name || 'N/A'}</td>
                         <td className="p-2">{new Date(invoice.invoice_date).toLocaleDateString('en-IN')}</td>
                         <td className="p-2 text-right font-semibold">₹{invoice.amount?.toLocaleString('en-IN')}</td>
                         <td className="p-2 text-center">
@@ -269,15 +323,54 @@ const Accounts = () => {
                           </span>
                         </td>
                         <td className="p-2 text-center">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => navigate(`/invoices/${invoice.id}`)}
-                            className="flex items-center gap-1 mx-auto"
-                          >
-                            <FileText className="h-3 w-3" />
-                            View Bill
-                          </Button>
+                          <div className="flex flex-col gap-1 items-center">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => navigate(`/invoices/${invoice.id}`)}
+                              className="flex items-center gap-1 mx-auto"
+                            >
+                              <FileText className="h-3 w-3" />
+                              View Bill
+                            </Button>
+                            {/* Approve button for admin/accounts and only for pending/submitted invoices */}
+                            {['admin','accounts'].includes(user.role) && ['pending','submitted'].includes(invoice.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={approvingId === invoice.id}
+                                onClick={() => handleApprove(invoice.id)}
+                                className="flex items-center gap-1 mx-auto text-blue-700 border-blue-300"
+                              >
+                                {approvingId === invoice.id ? 'Approving...' : 'Approve'}
+                              </Button>
+                            )}
+                            {/* Mark as Paid button for admin/accounts and only for approved invoices */}
+                            {['admin','accounts'].includes(user.role) && invoice.status === 'approved' && (
+                              <div className="flex flex-col items-center gap-1 w-full">
+                                <select
+                                  className="border rounded px-2 py-1 text-xs mb-1"
+                                  value={paymentMethods[invoice.id] || PAYMENT_METHODS[0].value}
+                                  onChange={e => setPaymentMethods(pm => ({ ...pm, [invoice.id]: e.target.value }))}
+                                  disabled={payingId === invoice.id}
+                                  style={{ minWidth: 120 }}
+                                >
+                                  {PAYMENT_METHODS.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </select>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={payingId === invoice.id}
+                                  onClick={() => handleMarkAsPaid(invoice)}
+                                  className="flex items-center gap-1 mx-auto text-green-700 border-green-300"
+                                >
+                                  {payingId === invoice.id ? 'Marking...' : 'Mark as Paid'}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -9,7 +9,7 @@ class ProjectRepository(BaseRepository):
         super().__init__(Project)
     
     async def get_all(self, db: AsyncSession, filters: dict = None):
-        """Get all projects with campaigns and client loaded"""
+        """Get all projects with campaigns, client, and CS user loaded"""
         query = select(self.model)
         
         # Apply filters
@@ -25,14 +25,15 @@ class ProjectRepository(BaseRepository):
         # Eagerly load relationships
         query = query.options(
             selectinload(Project.campaigns),
-            selectinload(Project.client)
+            selectinload(Project.client),
+            selectinload(Project.cs_user)
         )
         
         result = await db.execute(query)
         return result.scalars().all()
     
     async def get_by_id(self, db: AsyncSession, id: int):
-        """Get project by ID with campaigns and client loaded"""
+        """Get project by ID with campaigns, client, and CS user loaded"""
         query = select(Project).where(Project.id == id)
         
         # Filter out soft-deleted records
@@ -42,7 +43,8 @@ class ProjectRepository(BaseRepository):
         # Eagerly load relationships
         query = query.options(
             selectinload(Project.campaigns),
-            selectinload(Project.client)
+            selectinload(Project.client),
+            selectinload(Project.cs_user)
         )
         
         result = await db.execute(query)
@@ -51,6 +53,32 @@ class ProjectRepository(BaseRepository):
     async def get_by_client(self, db: AsyncSession, client_id: int):
         """Get projects by client ID"""
         query = select(Project).where(Project.client_id == client_id)
+        
+        # Eagerly load relationships
+        query = query.options(
+            selectinload(Project.campaigns),
+            selectinload(Project.client),
+            selectinload(Project.cs_user)
+        )
+        
+        result = await db.execute(query)
+        return result.scalars().all()
+    
+    async def get_by_assigned_cs(self, db: AsyncSession, user_id: int):
+        """Get projects assigned to a specific CS user"""
+        query = select(Project).where(Project.assigned_cs == user_id)
+        
+        # Filter out soft-deleted records
+        if hasattr(Project, 'is_active'):
+            query = query.where(Project.is_active == 1)
+        
+        # Eagerly load relationships
+        query = query.options(
+            selectinload(Project.campaigns),
+            selectinload(Project.client),
+            selectinload(Project.cs_user)
+        )
+        
         result = await db.execute(query)
         return result.scalars().all()
     

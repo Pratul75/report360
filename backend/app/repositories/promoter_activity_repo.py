@@ -112,15 +112,16 @@ class PromoterActivityRepository(BaseRepository):
         date_from = datetime.now().date() - timedelta(days=days)
         return await self.get_filtered_activities(db, date_from=date_from, limit=limit)
     
-    async def update_images(
+    async def update_media(
         self,
         db: AsyncSession,
         activity_id: int,
         before_image: Optional[str] = None,
         during_image: Optional[str] = None,
-        after_image: Optional[str] = None
+        after_image: Optional[str] = None,
+        activity_video: Optional[str] = None
     ):
-        """Update activity images"""
+        """Update activity images and video"""
         update_data = {}
         if before_image is not None:
             update_data['before_image'] = before_image
@@ -128,7 +129,8 @@ class PromoterActivityRepository(BaseRepository):
             update_data['during_image'] = during_image
         if after_image is not None:
             update_data['after_image'] = after_image
-        
+        if activity_video is not None:
+            update_data['activity_video'] = activity_video
         if update_data:
             return await self.update(db, activity_id, update_data)
         return await self.get_by_id(db, activity_id)

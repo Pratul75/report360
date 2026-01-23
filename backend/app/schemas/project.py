@@ -9,7 +9,7 @@ class ProjectBase(BaseModel):
     budget: Optional[float] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
-    assigned_cs: Optional[str] = None
+    assigned_cs: Optional[int] = None
 
 class ProjectCreate(ProjectBase):
     pass
@@ -21,7 +21,7 @@ class ProjectUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: Optional[str] = None
-    assigned_cs: Optional[str] = None
+    assigned_cs: Optional[int] = None
 
 # Nested schemas for relationships
 class CampaignBrief(BaseModel):
@@ -39,11 +39,20 @@ class ClientBrief(BaseModel):
     class Config:
         from_attributes = True
 
+class UserBrief(BaseModel):
+    id: int
+    name: str
+    email: str
+    
+    class Config:
+        from_attributes = True
+
 class ProjectResponse(ProjectBase):
     id: int
     status: str
     created_at: datetime
     client: Optional[ClientBrief] = None
+    cs_user: Optional[UserBrief] = None
     campaigns: List[CampaignBrief] = []
     
     class Config:

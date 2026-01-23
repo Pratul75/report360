@@ -251,7 +251,7 @@ const ReportCreate = () => {
             <div>
               <label className="block text-sm font-medium text-slate-700">GPS Data</label>
               <div className="flex gap-2 mb-2">
-                <Button 
+                {/* <Button 
                   type="button" 
                   variant="outline" 
                   size="sm"
@@ -259,8 +259,8 @@ const ReportCreate = () => {
                   disabled={fetchingGps || !campaignId}
                   className="text-xs"
                 >
-                  {fetchingGps ? 'Fetching...' : '📍 Fetch from Logs'}
-                </Button>
+                  {fetchingGps ? 'Fetching...' : '📍 Fetch from Logs'} */}
+                {/* </Button> */}
                 <Button 
                   type="button" 
                   variant="outline" 

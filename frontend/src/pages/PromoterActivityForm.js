@@ -9,6 +9,19 @@ import { ArrowLeft, Save, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const PromoterActivityForm = () => {
+    // Video upload handler (component scope)
+    const handleVideoChange = (file) => {
+      if (file && file.size > 100 * 1024 * 1024) {
+        toast.error('Video size must be less than 100MB');
+        return;
+      }
+      const validTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+      if (file && !validTypes.includes(file.type)) {
+        toast.error('Only MP4, WebM, OGG, MOV, AVI videos are allowed');
+        return;
+      }
+      setVideo(file);
+    };
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -32,6 +45,7 @@ const PromoterActivityForm = () => {
     during: null,
     after: null,
   });
+  const [video, setVideo] = useState(null);
 
   const { data: campaigns } = useQuery({
     queryKey: ['campaigns'],
@@ -75,6 +89,10 @@ const PromoterActivityForm = () => {
       if (images.during) uploadPromises.push(promoterActivitiesAPI.uploadImage(activityId, 'during', images.during));
       if (images.after) uploadPromises.push(promoterActivitiesAPI.uploadImage(activityId, 'after', images.after));
       
+      // Upload video if any
+      if (video) {
+        await promoterActivitiesAPI.uploadVideo(activityId, video);
+      }
       if (uploadPromises.length > 0) {
         await Promise.all(uploadPromises);
       }
@@ -97,9 +115,15 @@ const PromoterActivityForm = () => {
       if (images.during) uploadPromises.push(promoterActivitiesAPI.uploadImage(id, 'during', images.during));
       if (images.after) uploadPromises.push(promoterActivitiesAPI.uploadImage(id, 'after', images.after));
       
+
+      // Upload video if any
+      if (video) {
+        await promoterActivitiesAPI.uploadVideo(id, video);
+      }
       if (uploadPromises.length > 0) {
         await Promise.all(uploadPromises);
       }
+
       
       queryClient.invalidateQueries(['promoter-activities']);
       queryClient.invalidateQueries(['promoter-activity', id]);
@@ -351,6 +375,30 @@ const PromoterActivityForm = () => {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Video Upload */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-4">Activity Video</h3>
+              <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center">
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo"
+                  onChange={(e) => handleVideoChange(e.target.files[0])}
+                  className="hidden"
+                  id="video-upload"
+                />
+                <label htmlFor="video-upload" className="flex flex-col items-center justify-center cursor-pointer py-4">
+                  <Upload className="h-8 w-8 text-slate-400 mb-2" />
+                  <span className="text-sm text-slate-600">
+                    {video ? video.name : 'Upload activity video'}
+                  </span>
+                  <span className="text-xs text-slate-500 mt-1">Max 100MB • MP4, WebM, MOV, AVI</span>
+                </label>
+                {isEdit && activity?.activity_video && !video && (
+                  <div className="mt-2 text-xs text-green-600">✓ Video already uploaded</div>
+                )}
               </div>
             </div>
 

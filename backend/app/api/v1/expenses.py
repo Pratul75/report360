@@ -41,7 +41,7 @@ async def create_expense(
             raise HTTPException(status_code=400, detail="File size must be less than 5MB")
         
         # Create uploads directory if it doesn't exist
-        upload_dir = "/app/backend/uploads/expenses"
+        upload_dir = "/uploads/expenses"
         os.makedirs(upload_dir, exist_ok=True)
         
         # Generate unique filename

@@ -31,6 +31,10 @@ class InvoiceResponse(InvoiceBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    vendor_id: int           # ← ADD YE LINE
+    vendor_name: str = "Unknown Vendor"  # ← ADD YE LINE
     
     class Config:
         from_attributes = True
+        arbitrary_types_allowed = True  # ← ADD YE LINE (optional)
+

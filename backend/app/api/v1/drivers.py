@@ -29,7 +29,7 @@ router = APIRouter(prefix="/drivers", tags=["Drivers"])
 # -------------------------------------------------------------------
 # Upload directory
 # -------------------------------------------------------------------
-DRIVERS_UPLOAD_DIR = Path("/app/backend/uploads/drivers")
+DRIVERS_UPLOAD_DIR = Path("/uploads/drivers")
 DRIVERS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # -------------------------------------------------------------------

@@ -70,6 +70,11 @@ const Projects = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-slate-600 line-clamp-2">{project.description || 'No description'}</p>
+                {project.cs_user && (
+                  <div className="text-sm text-slate-600">
+                    <span className="font-medium">CS: {project.cs_user.name}</span>
+                  </div>
+                )}
                 {isAdmin() && project.budget && (
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-slate-400" />

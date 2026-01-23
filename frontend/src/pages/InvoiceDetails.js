@@ -207,6 +207,20 @@ const InvoiceDetails = () => {
             </div>
           )}
 
+          {/* Invoice PDF/Bill File View */}
+          {invoice.invoice_file && (
+            <div className="mb-8">
+              <h3 className="font-semibold text-slate-700 mb-2">Bill Image / Invoice File:</h3>
+              <div className="border rounded p-3 bg-slate-50">
+                {invoice.invoice_file.match(/\.(pdf)$/i) ? (
+                  <a href={invoice.invoice_file} target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">View PDF</a>
+                ) : (
+                  <img src={invoice.invoice_file} alt="Invoice Bill" className="max-h-96 object-contain border" />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Footer Notes */}
           <div className="text-center text-sm text-slate-500 pt-6 border-t">
             <p>Thank you for your business!</p>

@@ -23,10 +23,68 @@ from app.core.logging import logger
 router = APIRouter(prefix="/promoter-activities", tags=["Promoter Activities"])
 
 # Image upload configuration
-UPLOAD_DIR = Path("/app/backend/uploads/promoter_activities")
+UPLOAD_DIR = Path("/uploads/promoter_activities")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".webm"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_VIDEO_SIZE = 100 * 1024 * 1024  # 100MB
+def validate_video(file: UploadFile) -> bool:
+    """Validate video file type and size"""
+    if not file.filename:
+        return False
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_VIDEO_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid video file type. Allowed: {', '.join(ALLOWED_VIDEO_EXTENSIONS)}"
+        )
+    return True
+
+async def save_video(file: UploadFile, activity_id: int) -> str:
+    """Save uploaded video and return file path"""
+    validate_video(file)
+    activity_dir = UPLOAD_DIR / str(activity_id)
+    activity_dir.mkdir(parents=True, exist_ok=True)
+    ext = Path(file.filename).suffix.lower()
+    filename = f"activity_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = activity_dir / filename
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return f"/uploads/promoter_activities/{activity_id}/{filename}"
+# Video upload endpoint
+@router.post("/{activity_id}/upload-video")
+async def upload_activity_video(
+    activity_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_permission(Permission.CAMPAIGN_UPDATE))
+):
+    """
+    Upload video for activity
+    """
+    repo = PromoterActivityRepository()
+    activity = await repo.get_by_id(db, activity_id)
+    if not activity:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Promoter activity not found"
+        )
+    try:
+        video_path = await save_video(file, activity_id)
+        update_data = {"activity_video": video_path}
+        await repo.update(db, activity_id, update_data)
+        logger.info(f"Uploaded video for activity ID={activity_id}")
+        return {
+            "message": "Activity video uploaded successfully",
+            "video_path": video_path
+        }
+    except Exception as e:
+        logger.error(f"Video upload failed for activity ID={activity_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Video upload failed: {str(e)}"
+        )
 
 def validate_image(file: UploadFile) -> bool:
     """Validate image file type and size"""

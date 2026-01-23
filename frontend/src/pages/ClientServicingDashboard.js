@@ -130,6 +130,10 @@ const ClientServicingDashboard = () => {
     );
   }
 
+  // Helper to get full image URL
+  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8003';
+  const getFullImageUrl = (url) => url && !url.startsWith('http') ? `${BACKEND_URL}${url}` : url;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -198,7 +202,7 @@ const ClientServicingDashboard = () => {
         </div>
 
         {/* Live Photo & GPS Panel */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">📸 Live Photo & GPS Verification</h2>
           {loadingUpdates ? (
             <div className="text-center py-8">
@@ -211,7 +215,7 @@ const ClientServicingDashboard = () => {
                 <div key={activity.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-lg transition-shadow">
                   {activity.photo_url && (
                     <img 
-                      src={activity.photo_url} 
+                      src={getFullImageUrl(activity.photo_url)} 
                       alt="Activity" 
                       className="w-full h-40 object-cover rounded-md mb-2"
                     />
@@ -230,7 +234,7 @@ const ClientServicingDashboard = () => {
               ))}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Project Progress Overview */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

@@ -15,7 +15,7 @@ const allSidebarItems = [
   { path: '/driver-dashboard', icon: Truck, label: 'Driver Dashboard', menuKey: 'driver-dashboard' },
   { path: '/clients', icon: Users, label: 'Clients', menuKey: 'clients' },
   { path: '/projects', icon: Briefcase, label: 'Projects', menuKey: 'projects' },
-  { path: '/campaigns', icon: Megaphone, label: 'Campaigns', menuKey: 'campaigns', excludeForRoles: ['vendorS','godown_manager'] },
+  { path: '/campaigns', icon: Megaphone, label: 'Campaigns', menuKey: 'campaigns', excludeForRoles: ['vendors','godown_manager'] },
   { path: '/vendors', icon: Building2, label: 'Vendors', menuKey: 'vendors' },
   { path: '/vehicles', icon: Truck, label: 'Vehicles', menuKey: 'vehicles' },
   { path: '/drivers', icon: UserCircle, label: 'Drivers', menuKey: 'drivers' },
@@ -55,23 +55,35 @@ const Layout = () => {
     });
     
     return allSidebarItems.filter(item => {
+      // Hide Vendor and Operations menu for client_servicing role
+      if (user.role === 'client_servicing' && ['vendors', 'operations'].includes(item.menuKey)) {
+        return false;
+      }
+      // Show Expenses menu to client_servicing role and to users with permission
+      if (item.menuKey === 'expenses') {
+        // If user is client_servicing, always show
+        if (user.role === 'client_servicing') return true;
+        // Otherwise, show only if user has permission
+        return isMenuVisible('expenses');
+      }
       // Check if role is excluded for this menu item
       if (item.excludeForRoles && item.excludeForRoles.includes(user.role)) {
         return false;
       }
-      
       // Check if specific roles are required (HIGHEST PRIORITY)
       if (item.requiredPermissions) {
         const hasRequiredRole = item.requiredPermissions.includes(user.role);
         console.log(`Menu item "${item.label}": requiredPermissions=${JSON.stringify(item.requiredPermissions)}, userRole="${user.role}", visible=${hasRequiredRole}`);
         return hasRequiredRole;
       }
-      
-      // Admin-only items - show if user is admin, skip permission check
+      // Show 'Accounts & Payments' only to admin or account role
+      if (item.menuKey === 'accounts') {
+        return user.role === 'admin' || user.role === 'accounts';
+      }
+      // Admin-only items - show if user is admin
       if (item.adminOnly) {
         return user.role === 'admin';
       }
-      
       // Permission-based items - check isMenuVisible
       return isMenuVisible(item.menuKey);
     });

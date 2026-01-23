@@ -38,7 +38,7 @@ const ProjectDetails = () => {
           <div><strong>Start:</strong> {project.start_date ? formatDate(project.start_date) : '-'}</div>
           <div><strong>End:</strong> {project.end_date ? formatDate(project.end_date) : '-'}</div>
           <div><strong>Status:</strong> {project.status}</div>
-          <div><strong>Assigned CS:</strong> {project.assigned_cs || '-'}</div>
+          <div><strong>Assigned CS:</strong> {project.cs_user ? project.cs_user.name : '-'}</div>
         </div>
         <div className="bg-white p-4 rounded shadow">
           <h3 className="font-semibold mb-2">Client & Campaigns</h3>
@@ -65,3 +65,4 @@ const ProjectDetails = () => {
 };
 
 export default ProjectDetails;
+

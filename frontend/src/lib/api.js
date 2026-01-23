@@ -118,6 +118,13 @@ export const promoterActivitiesAPI = {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
+  uploadVideo: (id, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/promoter-activities/${id}/upload-video`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 };
 
 export const expensesAPI = {
@@ -169,10 +176,14 @@ export const invoicesAPI = {
     const formData = new FormData();
     formData.append('file', file);
     return api.post(`/invoices/${id}/upload`, formData, {
+    markAsPaid: (invoiceId, paymentMethod) =>
+      api.post(`/invoices/${invoiceId}/mark_paid`, { payment_method: paymentMethod }),
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
   delete: (id) => api.delete(`/invoices/${id}`),
+  approve: (id) => api.post(`/invoices/${id}/approve`),
+  markAsPaid: (id, paymentMethod) => api.post(`/invoices/${id}/mark_paid`, { payment_method: paymentMethod }),
 };
 
 export const paymentsAPI = {
@@ -317,7 +328,12 @@ export const mlInsightsAPI = {
 
 // Accounts & Payments API (Admin-only)
 export const accountsAPI = {
-  getSummary: () => api.get('/accounts/summary'),
+  getSummary: (fromDate, toDate) => {
+    const params = {};
+    if (fromDate) params.from_date = fromDate;
+    if (toDate) params.to_date = toDate;
+    return api.get('/accounts/summary', { params });
+  },
   getMetrics: () => api.get('/accounts/metrics'),
 };
 
@@ -342,6 +358,7 @@ export const usersAPI = {
   delete: (id) => api.delete(`/users/${id}`),
   register: (data) => api.post('/users/register', data),
   updatePassword: (id, data) => api.patch(`/users/${id}/password`, data),
+  getCSUsers: () => api.get('/users/cs-users/list'),
 };
 
 // Analytics API

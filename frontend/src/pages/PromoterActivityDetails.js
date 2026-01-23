@@ -148,6 +148,22 @@ const PromoterActivityDetails = () => {
         </CardContent>
       </Card>
 
+      {/* Activity Video */}
+      {activity.activity_video && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-xl font-semibold">Activity Video</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="aspect-video rounded-lg overflow-hidden border-2 border-slate-200 flex items-center justify-center">
+              <video controls className="w-full h-full">
+                <source src={`${process.env.REACT_APP_BACKEND_URL}${activity.activity_video}`} />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Additional Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>

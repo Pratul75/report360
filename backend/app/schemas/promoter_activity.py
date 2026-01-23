@@ -14,10 +14,11 @@ class PromoterActivityBase(BaseModel):
     specialty: Optional[str] = Field(None, max_length=255, description="Promoter specialty")
     language: Optional[str] = Field(None, max_length=100, description="Language(s) spoken")
     remarks: Optional[str] = Field(None, description="Additional notes or remarks")
+    activity_video: Optional[str] = Field(None, description="Path to activity video file")
 
 class PromoterActivityCreate(PromoterActivityBase):
     """Schema for creating promoter activity"""
-    # Image URLs will be added after upload via separate endpoint
+    # Image/Video URLs will be added after upload via separate endpoint
     pass
 
 class PromoterActivityUpdate(BaseModel):
@@ -30,6 +31,7 @@ class PromoterActivityUpdate(BaseModel):
     specialty: Optional[str] = Field(None, max_length=255)
     language: Optional[str] = Field(None, max_length=100)
     remarks: Optional[str] = None
+    activity_video: Optional[str] = None
     
     model_config = ConfigDict(extra='forbid')
 
@@ -48,6 +50,7 @@ class PromoterActivityResponse(PromoterActivityBase):
     created_at: datetime
     updated_at: datetime
     created_by_id: Optional[int] = None
+    activity_video: Optional[str] = None
     is_active: bool
     
     # Related data (optional, for detail view)

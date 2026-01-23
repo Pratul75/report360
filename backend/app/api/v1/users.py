@@ -103,6 +103,21 @@ async def get_users_by_role(
     users = await repo.get_by_role(db, role)
     return [UserListResponse.model_validate(u) for u in users]
 
+@router.get("/cs-users/list", response_model=List[UserListResponse])
+async def get_cs_users(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_permission(Permission.PROJECT_CREATE))
+):
+    """
+    Get all active Client Servicing (CS) users
+    Used for CS assignment dropdown in project creation
+    """
+    repo = UserRepository()
+    users = await repo.get_by_role(db, UserRole.CLIENT_SERVICING)
+    # Filter to only active users
+    active_users = [u for u in users if u.is_active]
+    return [UserListResponse.model_validate(u) for u in active_users]
+
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,

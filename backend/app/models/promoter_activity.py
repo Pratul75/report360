@@ -23,10 +23,11 @@ class PromoterActivity(Base, BaseModel):
     people_attended = Column(Integer, nullable=False, default=0)
     activity_count = Column(Integer, nullable=False, default=0)
     
-    # Image Storage (file paths)
+    # Image/Video Storage (file paths)
     before_image = Column(String(500))  # Path: /uploads/promoter_activities/{id}/before.jpg
     during_image = Column(String(500))  # Path: /uploads/promoter_activities/{id}/during.jpg
     after_image = Column(String(500))   # Path: /uploads/promoter_activities/{id}/after.jpg
+    activity_video = Column(String(500))  # Path: /uploads/promoter_activities/{id}/activity.mp4
     
     # Additional Info
     specialty = Column(String(255))

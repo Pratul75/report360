@@ -16,6 +16,7 @@ class PaymentBase(BaseModel):
 class PaymentCreate(BaseModel):
     amount: float
     payment_date: Optional[date] = None
+    status: Optional[PaymentStatus] = PaymentStatus.PENDING
     payment_method: Optional[PaymentMethod] = None
     transaction_reference: Optional[str] = None
     remarks: Optional[str] = None

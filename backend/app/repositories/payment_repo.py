@@ -92,36 +92,44 @@ class PaymentRepository:
         total = result.scalar()
         return float(total) if total else 0.0
     
-    async def get_total_by_status(self, status: str) -> float:
-        """Get total amount of payments by status"""
-        result = await self.db.execute(
-            select(func.sum(Payment.amount)).where(
-                Payment.status == status,
-                Payment.is_active == True
-            )
+
+    async def get_total_by_status(self, status: str, from_date: str = None, to_date: str = None) -> float:
+        """Get total amount of payments by status, with optional date filter"""
+        query = select(func.sum(Payment.amount)).where(
+            Payment.status == status,
+            Payment.is_active == True
         )
+        if from_date:
+            query = query.where(Payment.payment_date >= from_date)
+        if to_date:
+            query = query.where(Payment.payment_date <= to_date)
+        result = await self.db.execute(query)
         total = result.scalar()
         return float(total) if total else 0.0
-    
-    async def get_completed_amount(self) -> float:
-        """Get total amount of completed payments"""
-        return await self.get_total_by_status(PaymentStatus.COMPLETED.value)
-    
-    async def get_pending_amount(self) -> float:
-        """Get total amount of pending payments"""
-        return await self.get_total_by_status(PaymentStatus.PENDING.value)
-    
-    async def get_monthly_total(self) -> float:
-        """Get total completed payments for current month"""
-        today = date.today()
-        first_day = today.replace(day=1)
-        result = await self.db.execute(
-            select(func.sum(Payment.amount)).where(
-                Payment.payment_date >= first_day,
-                Payment.status == PaymentStatus.COMPLETED,
-                Payment.is_active == True
-            )
+
+    async def get_completed_amount(self, from_date: str = None, to_date: str = None) -> float:
+        """Get total amount of completed payments, with optional date filter"""
+        return await self.get_total_by_status(PaymentStatus.COMPLETED.value, from_date, to_date)
+
+    async def get_pending_amount(self, from_date: str = None, to_date: str = None) -> float:
+        """Get total amount of pending payments, with optional date filter"""
+        return await self.get_total_by_status(PaymentStatus.PENDING.value, from_date, to_date)
+
+    async def get_monthly_total(self, from_date: str = None, to_date: str = None) -> float:
+        """Get total completed payments for current month or custom range"""
+        query = select(func.sum(Payment.amount)).where(
+            Payment.status == PaymentStatus.COMPLETED,
+            Payment.is_active == True
         )
+        if from_date:
+            query = query.where(Payment.payment_date >= from_date)
+        else:
+            today = date.today()
+            first_day = today.replace(day=1)
+            query = query.where(Payment.payment_date >= first_day)
+        if to_date:
+            query = query.where(Payment.payment_date <= to_date)
+        result = await self.db.execute(query)
         total = result.scalar()
         return float(total) if total else 0.0
     
@@ -153,12 +161,15 @@ class PaymentRepository:
         )
         return result.all()
     
-    async def count_pending(self) -> int:
-        """Count pending payments"""
-        result = await self.db.execute(
-            select(func.count(Payment.id)).where(
-                Payment.status == PaymentStatus.PENDING,
-                Payment.is_active == True
-            )
+    async def count_pending(self, from_date: str = None, to_date: str = None) -> int:
+        """Count pending payments, with optional date filter"""
+        query = select(func.count(Payment.id)).where(
+            Payment.status == PaymentStatus.PENDING,
+            Payment.is_active == True
         )
+        if from_date:
+            query = query.where(Payment.payment_date >= from_date)
+        if to_date:
+            query = query.where(Payment.payment_date <= to_date)
+        result = await self.db.execute(query)
         return result.scalar() or 0

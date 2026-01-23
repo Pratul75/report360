@@ -10,7 +10,7 @@ from typing import Dict, List, Any
 class AccountsService:
     """Service for accounts and payments financial calculations"""
     
-    async def get_accounts_summary(self, db: AsyncSession) -> Dict[str, Any]:
+    async def get_accounts_summary(self, db: AsyncSession, from_date: str = None, to_date: str = None) -> Dict[str, Any]:
         """
         Get comprehensive accounts summary with all dynamic calculations
         
@@ -33,9 +33,10 @@ class AccountsService:
         pending_invoice_amount = await invoice_repo.get_pending_amount()
         
         # Get payment totals
-        total_paid = await payment_repo.get_completed_amount()
+        total_paid = await payment_repo.get_completed_amount(from_date, to_date)
+        # Remove date filter for total_pending and pending_count
         total_pending_payments = await payment_repo.get_pending_amount()
-        paid_this_month = await payment_repo.get_monthly_total()
+        paid_this_month = await payment_repo.get_monthly_total(from_date, to_date)
         pending_count = await payment_repo.count_pending()
         
         # Get vendor-wise summaries
@@ -112,7 +113,7 @@ class AccountsService:
         
         return list(vendor_map.values())
     
-    async def get_financial_metrics(self, db: AsyncSession) -> Dict[str, Any]:
+    async def get_financial_metrics(self, db: AsyncSession, from_date: str = None, to_date: str = None) -> Dict[str, Any]:
         """
         Get key financial metrics for dashboard cards
         
@@ -121,10 +122,10 @@ class AccountsService:
         invoice_repo = InvoiceRepository(db)
         payment_repo = PaymentRepository(db)
         
-        pending_payments = await payment_repo.get_pending_amount()
-        paid_this_month = await payment_repo.get_monthly_total()
+        pending_payments = await payment_repo.get_pending_amount(from_date, to_date)
+        paid_this_month = await payment_repo.get_monthly_total(from_date, to_date)
         total_payable = await invoice_repo.get_pending_amount()
-        pending_count = await payment_repo.count_pending()
+        pending_count = await payment_repo.count_pending(from_date, to_date)
         
         return {
             "pending_payments": round(pending_payments, 2),

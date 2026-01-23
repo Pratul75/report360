@@ -6,6 +6,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 import io
 import csv
+import logging
 from reportlab.lib.pagesizes import A4, letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -18,6 +19,8 @@ from app.core.security import get_current_user
 from app.api.dependencies import require_permission
 from app.core.role_permissions import Permission
 from app.services.client_servicing_dashboard_service import ClientServicingDashboardService
+
+logger = logging.getLogger(__name__)
 from app.models.user import User
 
 router = APIRouter(
@@ -62,7 +65,7 @@ async def get_project_progress(
     end_date: Optional[date] = Query(None, description="Filter end date"),
     client_id: Optional[int] = Query(None, description="Filter by client"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get project progress overview
@@ -70,13 +73,16 @@ async def get_project_progress(
     - Completed Projects
     - Pending Projects
     - Upcoming Projects
+    
+    CS users will only see their own assigned projects.
     """
     try:
         result = await ClientServicingDashboardService.get_project_progress(
             db=db,
             start_date=start_date,
             end_date=end_date,
-            client_id=client_id
+            client_id=client_id,
+            current_user=current_user
         )
         print(f"[DEBUG] Project Progress Result: {result}")
         return result
@@ -94,7 +100,7 @@ async def get_vehicle_movement(
     start_date: Optional[date] = Query(None, description="Filter start date"),
     end_date: Optional[date] = Query(None, description="Filter end date"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get vehicle movement summary
@@ -102,12 +108,15 @@ async def get_vehicle_movement(
     - Assigned Vehicles
     - Unassigned Vehicles
     - Total Distance
+    
+    CS users will see vehicles from their assigned projects only.
     """
     try:
         result = await ClientServicingDashboardService.get_vehicle_movement(
             db=db,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            current_user=current_user
         )
         return result
     except Exception as e:
@@ -124,20 +133,23 @@ async def get_expense_snapshot(
     end_date: Optional[date] = Query(None, description="Filter end date (default: today)"),
     campaign_id: Optional[int] = Query(None, description="Filter by campaign"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get daily expense snapshot
     - Total Expenses
     - Approved/Pending/Rejected breakdown
     - Campaign-wise split
+    
+    CS users will see expenses only from their assigned projects.
     """
     try:
         result = await ClientServicingDashboardService.get_daily_expense_snapshot(
             db=db,
             start_date=start_date,
             end_date=end_date,
-            campaign_id=campaign_id
+            campaign_id=campaign_id,
+            current_user=current_user
         )
         return result
     except Exception as e:
@@ -152,7 +164,7 @@ async def get_expense_snapshot(
 async def get_live_updates(
     limit: int = Query(20, description="Number of recent activities to fetch", ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get live photo and GPS updates from promoter activities
@@ -163,10 +175,13 @@ async def get_live_updates(
     try:
         result = await ClientServicingDashboardService.get_live_photo_gps_updates(
             db=db,
-            limit=limit
+            limit=limit,
+            current_user=current_user
         )
         return result
     except Exception as e:
+        import traceback
+        logger.error(f"Error in get_live_updates: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error fetching live updates: {str(e)}")
 
 
@@ -179,7 +194,7 @@ async def export_dashboard_report(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Export dashboard report in specified format
@@ -189,13 +204,13 @@ async def export_dashboard_report(
     
     # Fetch all dashboard data
     project_progress = await ClientServicingDashboardService.get_project_progress(
-        db=db, start_date=start_date, end_date=end_date
+        db=db, start_date=start_date, end_date=end_date, current_user=current_user
     )
     vehicle_movement = await ClientServicingDashboardService.get_vehicle_movement(
-        db=db, start_date=start_date, end_date=end_date
+        db=db, start_date=start_date, end_date=end_date, current_user=current_user
     )
     expense_snapshot = await ClientServicingDashboardService.get_daily_expense_snapshot(
-        db=db, start_date=start_date, end_date=end_date
+        db=db, start_date=start_date, end_date=end_date, current_user=current_user
     )
     
     if format.lower() == "excel":
