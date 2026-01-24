@@ -308,13 +308,13 @@ const DriverDashboard = () => {
       </div>
     );
   }
-
+  
   // Driver view (existing code)
   const profile = dashboardData?.profile || profileData;
   const assignments = workData?.assignments || dashboardData?.assignments || [];
   const vehicle = vehicleData?.vehicle || dashboardData?.vehicle;
   const kmLog = dashboardData?.km_log;
-
+  
   // Check if driver data exists
   if (!dashboardData && isDriver) {
     return (
@@ -345,7 +345,7 @@ const DriverDashboard = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Driver Dashboard</h1>
             <p className="text-gray-600 mt-1">
-              Welcome, {profile?.driver?.name || 'Driver'}
+              Welcome, {dashboardData?.driver?.name || 'Driver'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -391,88 +391,94 @@ const DriverDashboard = () => {
       {showProfile ? (
         <ProfileForm 
           profile={profile} 
-          onSuccess={() => {
-            refetchProfile();
+          driver={dashboardData?.driver}
+          onSuccess={async () => {
+            await refetchProfile();
+            await refetch();
             setShowProfile(false);
           }}
         />
       ) : (
         <div className="space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Assignments Today</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
-                      {assignments.length}
-                    </p>
-                  </div>
-                  <Calendar className="w-8 h-8 text-blue-600" />
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">KM Status</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
-                      {kmLog?.status === 'COMPLETED' ? (
-                        <Badge className="bg-green-100 text-green-800 border-green-200">Done</Badge>
-                      ) : kmLog?.status === 'IN_PROGRESS' ? (
-                        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">In Progress</Badge>
-                      ) : (
-                        <Badge variant="secondary">Pending</Badge>
-                      )}
-                    </p>
-                  </div>
-                  <MapPin className="w-8 h-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
+          {/* Only show quick stats, KMTracker, and journey details if assignments exist */}
+          {assignments.length > 0 && (
+            <>
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Assignments Today</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">
+                          {assignments.length}
+                        </p>
+                      </div>
+                      <Calendar className="w-8 h-8 text-blue-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">KM Status</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">
+                          {kmLog?.status === 'COMPLETED' ? (
+                            <Badge className="bg-green-100 text-green-800 border-green-200">Done</Badge>
+                          ) : kmLog?.status === 'IN_PROGRESS' ? (
+                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">In Progress</Badge>
+                          ) : (
+                            <Badge variant="secondary">Pending</Badge>
+                          )}
+                        </p>
+                      </div>
+                      <MapPin className="w-8 h-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600">Total KM Today</p>
+                        <p className="text-3xl font-bold text-gray-900 mt-1">
+                          {kmLog?.total_km || 0}
+                        </p>
+                      </div>
+                      <Truck className="w-8 h-8 text-purple-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total KM Today</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
-                      {kmLog?.total_km || 0}
-                    </p>
-                  </div>
-                  <Truck className="w-8 h-8 text-purple-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              {/* KM Tracker - Main Feature */}
+              <KMTracker kmLog={kmLog} onUpdate={refetch} />
 
-          {/* KM Tracker - Main Feature */}
-          <KMTracker kmLog={kmLog} onUpdate={refetch} />
-
-          {/* View Journey Details Button */}
-          {kmLog && (kmLog.status === 'IN_PROGRESS' || kmLog.status === 'COMPLETED') && (
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">View Complete Journey Details</p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      See full journey information with GPS coordinates, photos, and timestamps
-                    </p>
-                  </div>
-                  <Button 
-                    onClick={() => navigate(`/journey/me/${selectedDate}`)}
-                    className="ml-4"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              {/* View Journey Details Button */}
+              {kmLog && (kmLog.status === 'IN_PROGRESS' || kmLog.status === 'COMPLETED') && (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-900">View Complete Journey Details</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          See full journey information with GPS coordinates, photos, and timestamps
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={() => navigate(`/journey/me/${selectedDate}`)}
+                        className="ml-4"
+                      >
+                        <MapPin className="w-4 h-4 mr-2" />
+                        View Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
 
           {/* Vehicle Info */}
@@ -486,8 +492,8 @@ const DriverDashboard = () => {
           {/* Vendor Booking Assignments */}
           <Card>
             <CardHeader>
-              <CardTitle>My Work Assignments - Approval Required</CardTitle>
-              <CardDescription>Review and approve or reject work assignments</CardDescription>
+              <CardTitle>My Work Assignments</CardTitle>
+              <CardDescription>Review and accept or reject work assignments</CardDescription>
             </CardHeader>
             <CardContent>
               {assignmentsLoading ? (

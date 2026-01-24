@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -19,6 +20,10 @@ const Expenses = () => {
     queryFn: () => expensesAPI.getAll().then(res => res.data),
   });
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
+
+  // Check if user has admin/accountant permissions to see submitter info
+  const canSeeSubmitterInfo = hasPermission('admin') || hasPermission('accountant') || hasPermission('expense.approve');
 
   return (
     <div data-testid="expenses-page">
@@ -47,6 +52,8 @@ const Expenses = () => {
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">Type</th>
                   <th className="text-left py-3 px-4">Amount</th>
+                  {canSeeSubmitterInfo && <th className="text-left py-3 px-4">Submitted By</th>}
+                  {canSeeSubmitterInfo && <th className="text-left py-3 px-4">Role</th>}
                   <th className="text-left py-3 px-4">Date</th>
                   <th className="text-left py-3 px-4">Status</th>
                   <th className="text-right py-3 px-4">Actions</th>
@@ -57,6 +64,16 @@ const Expenses = () => {
                   <tr key={expense.id} className="border-b hover:bg-slate-50" data-testid="expense-row">
                     <td className="py-3 px-4">{expense.expense_type}</td>
                     <td className="py-3 px-4 font-medium">{formatCurrency(expense.amount)}</td>
+                    {canSeeSubmitterInfo && (
+                      <td className="py-3 px-4 text-slate-600">
+                        {expense.submitted_by_user?.name || 'Unknown'}
+                      </td>
+                    )}
+                    {canSeeSubmitterInfo && (
+                      <td className="py-3 px-4 text-slate-600 capitalize">
+                        {expense.submitted_by_user?.role.replace(/_/g, ' ') || 'N/A'}
+                      </td>
+                    )}
                     <td className="py-3 px-4 text-slate-600">{formatDate(expense.submitted_date)}</td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[expense.status]}`}>

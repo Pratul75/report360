@@ -7,7 +7,13 @@ import { Input } from '../ui/input';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const ProfileForm = ({ profile, onSuccess }) => {
+const ProfileForm = ({ profile, driver, onSuccess }) => {
+  // Debug: log the profile and driver object to inspect their structure
+  console.log('Driver Profile object:', profile);
+  console.log('Driver object:', driver);
+  // Prefer new backend fields if present, then profile, then driver prop
+  const driverName = profile?.driver_name || profile?.name || driver?.name || 'N/A';
+  const driverPhone = profile?.driver_phone || profile?.phone || driver?.phone || 'N/A';
   const [formData, setFormData] = useState({
     address: profile?.address || '',
     emergency_contact_name: profile?.emergency_contact_name || '',
@@ -43,29 +49,19 @@ const ProfileForm = ({ profile, onSuccess }) => {
         <CardTitle>Driver Profile</CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Driver Info Summary */}
+        <div className="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 flex flex-col md:flex-row md:items-center md:gap-8">
+          <div className="mb-2 md:mb-0">
+            <span className="text-sm text-gray-600 font-medium">Name: </span>
+            <span className="text-lg text-blue-900 font-bold">{driverName}</span>
+          </div>
+          <div>
+            <span className="text-sm text-gray-600 font-medium">Phone: </span>
+            <span className="text-lg text-blue-900 font-bold">{driverPhone}</span>
+          </div>
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Name
-            </label>
-            <Input
-              value={profile?.driver?.name || ''}
-              disabled
-              className="bg-gray-100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
-            </label>
-            <Input
-              value={profile?.driver?.phone || ''}
-              disabled
-              className="bg-gray-100"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Address *

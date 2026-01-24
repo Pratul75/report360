@@ -14,6 +14,7 @@ class Expense(Base, BaseModel):
     
     campaign_id = Column(Integer, ForeignKey("campaigns.id", ondelete="CASCADE"))
     driver_id = Column(Integer, ForeignKey("drivers.id", ondelete="SET NULL"))
+    submitted_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     expense_type = Column(String(100), nullable=False)
     amount = Column(Float, nullable=False)
     description = Column(Text)

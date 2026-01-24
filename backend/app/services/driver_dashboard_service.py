@@ -84,18 +84,21 @@ class DriverDashboardService:
         db: AsyncSession,
         driver_id: int
     ) -> Dict[str, Any]:
-        """Get or create driver profile"""
-        profile_query = select(DriverProfile).where(DriverProfile.driver_id == driver_id)
+        """Get or create driver profile, including driver name and phone"""
+        # Fetch profile and join driver for name/phone
+        profile_query = select(DriverProfile, Driver).join(Driver, DriverProfile.driver_id == Driver.id).where(DriverProfile.driver_id == driver_id)
         result = await db.execute(profile_query)
-        profile = result.scalar_one_or_none()
-        
-        if not profile:
-            # Create new profile
+        row = result.first()
+        if row:
+            profile, driver = row
+        else:
+            # Create new profile if not exists
             profile = DriverProfile(driver_id=driver_id, is_profile_complete=False)
             db.add(profile)
             await db.commit()
             await db.refresh(profile)
-        
+            # Fetch driver for name/phone
+            driver = await db.get(Driver, driver_id)
         return {
             "id": profile.id,
             "address": profile.address,
@@ -105,6 +108,8 @@ class DriverDashboardService:
             "profile_photo": profile.profile_photo,
             "aadhar_number": profile.aadhar_number,
             "is_profile_complete": profile.is_profile_complete,
+            "driver_name": driver.name if driver else None,
+            "driver_phone": driver.phone if driver else None,
         }
 
     @staticmethod

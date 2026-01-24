@@ -118,6 +118,30 @@ const ExpenseDetails = () => {
           </CardContent>
         </Card>
 
+        {expense.submitted_by_user && (
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">Submitted By</h3>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Name</label>
+                  <p className="text-slate-900 font-medium">{expense.submitted_by_user.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Phone Number</label>
+                  <p className="text-slate-900 font-medium">{expense.submitted_by_user.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-600">Role</label>
+                  <p className="text-slate-900 font-medium capitalize">{expense.submitted_by_user.role.replace(/_/g, ' ')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {expense.bill_image && (
           <Card>
             <CardHeader>
@@ -125,10 +149,24 @@ const ExpenseDetails = () => {
             </CardHeader>
             <CardContent>
               <img 
-                src={`${process.env.REACT_APP_BACKEND_URL}${expense.bill_image}`} 
+                src={
+                  expense.bill_image.startsWith('http') 
+                    ? expense.bill_image 
+                    : expense.bill_image.startsWith('/uploads/') 
+                      ? `${process.env.REACT_APP_BACKEND_URL}${expense.bill_image}`
+                      : `${process.env.REACT_APP_BACKEND_URL}/uploads/expenses/${expense.bill_image}`
+                }
                 alt="Bill" 
                 className="max-w-full h-auto rounded-lg shadow-md"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'block';
+                }}
               />
+              <div style={{display: 'none'}} className="text-sm text-slate-600 p-3 bg-slate-50 rounded">
+                <p className="font-medium mb-1">Bill image not found</p>
+                <p className="break-all text-xs">{expense.bill_image}</p>
+              </div>
             </CardContent>
           </Card>
         )}

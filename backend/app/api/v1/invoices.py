@@ -200,14 +200,16 @@ async def create_invoice(
     if user_role == "vendor":
         if not user_vendor_id:
             logging.error("Vendor user must be linked to a vendor")
-            raise HTTPException(status_code=403, detail="Vendor user must be linked to a vendor")
+            raise HTTPException(status_code=403, detail="Your account is not linked to any vendor. Please contact support.")
         vendor_id = user_vendor_id
     elif user_role == "admin":
-        logging.error("Admin must specify vendor_id")
-        raise HTTPException(status_code=400, detail="Admin must specify vendor_id")
+        if not invoice.vendor_id:
+            logging.error("Admin invoice creation requires vendor_id")
+            raise HTTPException(status_code=400, detail="Please select a vendor for this invoice")
+        vendor_id = invoice.vendor_id
     else:
         logging.error("Not authorized to create invoices")
-        raise HTTPException(status_code=403, detail="Not authorized to create invoices")
+        raise HTTPException(status_code=403, detail="Only vendors and admins can create invoices")
 
     repo = InvoiceRepository(db)
     invoice_dict = invoice.dict()
@@ -218,8 +220,20 @@ async def create_invoice(
     except Exception as e:
         logging.error(f"Invoice model error: {e}, invoice_dict={invoice_dict}")
         raise HTTPException(status_code=400, detail=f"Invoice model error: {e}")
-    created = await repo.create(new_invoice)
-    return created
+    
+    try:
+        created = await repo.create(new_invoice)
+        return created
+    except Exception as e:
+        error_str = str(e).lower()
+        logging.error(f"Invoice creation database error: {e}")
+        
+        # Handle duplicate invoice number
+        if 'unique' in error_str or 'duplicate' in error_str or 'invoice_number' in error_str:
+            raise HTTPException(status_code=400, detail="Invoice number already exists. Please use a different invoice number.")
+        
+        # Handle other database errors
+        raise HTTPException(status_code=400, detail="Failed to create invoice. Please try again.")
 
 @router.put("/{invoice_id}", response_model=InvoiceResponse)
 async def update_invoice(
@@ -266,8 +280,8 @@ async def upload_invoice_file(
     if user_role == "vendor" and invoice.vendor_id != user_vendor_id:
         raise HTTPException(status_code=403, detail="Not authorized to upload for this invoice")
     
-    # Save file
-    upload_dir = Path(__file__).parent.parent.parent / "uploads" / "invoices"
+    # Save file to /uploads/invoices (root level)
+    upload_dir = Path("/uploads/invoices")
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")

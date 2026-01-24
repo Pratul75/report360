@@ -192,7 +192,7 @@ const DriverAssignmentApproval = ({ assignment, onActionComplete }) => {
                   ) : (
                     <>
                       <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
+                      Accept
                     </>
                   )}
                 </Button>
@@ -249,7 +249,7 @@ const DriverAssignmentApproval = ({ assignment, onActionComplete }) => {
           <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
             <CheckCircle className="w-5 h-5 text-green-600" />
             <p className="text-sm text-green-800 font-medium">
-              You have approved this assignment
+              You have Accepted this assignment
             </p>
           </div>
         )}

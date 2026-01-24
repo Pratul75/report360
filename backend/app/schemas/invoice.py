@@ -18,6 +18,7 @@ class InvoiceCreate(BaseModel):
     amount: float
     invoice_date: date
     campaign_id: Optional[int] = None
+    vendor_id: Optional[int] = None
 
 class InvoiceUpdate(BaseModel):
     invoice_number: Optional[str] = None

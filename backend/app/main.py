@@ -48,9 +48,11 @@ app.add_middleware(
 )
 
 # Mount static files for uploads
-uploads_dir = Path(__file__).parent.parent / "uploads"
+uploads_dir = Path("/uploads")
+
 if uploads_dir.exists():
     app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
+    logger.info(f"Mounted uploads directory at {uploads_dir}")
 else:
     logger.warning(f"Uploads directory not found at {uploads_dir}")
 

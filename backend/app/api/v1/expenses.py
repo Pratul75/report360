@@ -41,15 +41,18 @@ async def create_expense(
             raise HTTPException(status_code=400, detail="File size must be less than 5MB")
         
         # Create uploads directory if it doesn't exist
-        upload_dir = "/uploads/expenses"
-        os.makedirs(upload_dir, exist_ok=True)
+        # Use relative path from backend directory
+        from pathlib import Path
+        backend_dir = Path(__file__).parent.parent.parent.parent  # backend directory
+        upload_dir = backend_dir / "uploads" / "expenses"
+        upload_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_extension = bill_image.filename.split(".")[-1]
         user_id = current_user.get('user_id', 'unknown')
         filename = f"expense_{timestamp}_{user_id}.{file_extension}"
-        file_path = os.path.join(upload_dir, filename)
+        file_path = upload_dir / filename
         
         # Save file
         with open(file_path, "wb") as buffer:
@@ -69,17 +72,32 @@ async def create_expense(
         submitted_date=submitted_date
     )
     
+    # Get user ID from current user token
+    user_id = current_user.get('user_id') or current_user.get('id')
+    
     service = ExpenseService()
-    return await service.create_expense(db, expense_data)
+    return await service.create_expense(db, expense_data, user_id)
 
 @router.get("", response_model=List[ExpenseResponse])
 async def get_expenses(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_permission(Permission.EXPENSE_READ))
 ):
-    """Get all expenses"""
+    """Get all expenses - filtered by role
+    
+    - Admin/Accountant: Can see all expenses
+    - Driver/Operations: Can only see their own expenses
+    """
     service = ExpenseService()
-    return await service.get_all_expenses(db)
+    user_role = current_user.get('role')
+    user_id = current_user.get('user_id')
+    
+    # Admin and Accountant can see all expenses
+    if user_role in ['admin', 'accounts']:
+        return await service.get_all_expenses(db)
+    
+    # Other roles can only see their own submitted expenses
+    return await service.get_user_expenses(db, user_id)
 
 @router.patch("/{expense_id}/approve", response_model=ExpenseResponse)
 async def approve_expense(
@@ -108,9 +126,26 @@ async def get_expense(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_permission(Permission.EXPENSE_READ))
 ):
-    """Get expense by ID"""
+    """Get expense by ID - with permission check
+    
+    - Admin/Accountant: Can view any expense
+    - Others: Can only view their own expenses
+    """
     service = ExpenseService()
-    return await service.get_expense(db, expense_id)
+    user_role = current_user.get('role')
+    user_id = current_user.get('user_id')
+    
+    # Get the expense
+    expense = await service.get_expense(db, expense_id)
+    
+    # Check permission - non-admin users can only see their own expenses
+    if user_role not in ['admin', 'accounts'] and expense.submitted_by != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to view this expense"
+        )
+    
+    return expense
 
 
 @router.put("/{expense_id}", response_model=ExpenseResponse)

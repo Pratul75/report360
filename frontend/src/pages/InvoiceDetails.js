@@ -228,9 +228,53 @@ const InvoiceDetails = () => {
               <h3 className="font-semibold text-slate-700 mb-2">Bill Image / Invoice File:</h3>
               <div className="border rounded p-3 bg-slate-50">
                 {invoice.invoice_file.match(/\.(pdf)$/i) ? (
-                  <a href={invoice.invoice_file} target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">View PDF</a>
+                  <a 
+                    href={
+                      invoice.invoice_file.startsWith('http') 
+                        ? invoice.invoice_file 
+                        : `${process.env.REACT_APP_BACKEND_URL}${invoice.invoice_file}`
+                    } 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-indigo-600 underline"
+                  >
+                    View PDF
+                  </a>
                 ) : (
-                  <img src={invoice.invoice_file} alt="Invoice Bill" className="max-h-96 object-contain border" />
+                  <>
+                    <img 
+                      src={
+                        invoice.invoice_file.startsWith('http') 
+                          ? invoice.invoice_file 
+                          : invoice.invoice_file.includes('/uploads/')
+                            ? `${process.env.REACT_APP_BACKEND_URL}${invoice.invoice_file.substring(invoice.invoice_file.indexOf('/uploads/'))}`
+                            : invoice.invoice_file.startsWith('/uploads/')
+                              ? `${process.env.REACT_APP_BACKEND_URL}${invoice.invoice_file}`
+                              : `${process.env.REACT_APP_BACKEND_URL}/uploads/invoices/${invoice.invoice_file}`
+                      }
+                      alt="Invoice Bill" 
+                      className="max-h-96 object-contain border rounded"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        if (e.target.nextSibling) {
+                          e.target.nextSibling.style.display = 'block';
+                        }
+                      }}
+                    />
+                    <div style={{display: 'none'}} className="text-sm text-slate-600 p-3 bg-slate-50 rounded border border-red-300">
+                      <p className="text-red-600 font-semibold mb-2">Image failed to load</p>
+                      <p>Stored path: {invoice.invoice_file}</p>
+                      <p>Full URL: {
+                        invoice.invoice_file.startsWith('http') 
+                          ? invoice.invoice_file 
+                          : invoice.invoice_file.includes('/uploads/')
+                            ? `${process.env.REACT_APP_BACKEND_URL}${invoice.invoice_file.substring(invoice.invoice_file.indexOf('/uploads/'))}`
+                            : invoice.invoice_file.startsWith('/uploads/')
+                              ? `${process.env.REACT_APP_BACKEND_URL}${invoice.invoice_file}`
+                              : `${process.env.REACT_APP_BACKEND_URL}/uploads/invoices/${invoice.invoice_file}`
+                      }</p>
+                    </div>
+                  </>
                 )}
               </div>
             </div>

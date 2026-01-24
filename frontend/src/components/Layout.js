@@ -59,6 +59,10 @@ const Layout = () => {
       if (user.role === 'client_servicing' && ['vendors', 'operations'].includes(item.menuKey)) {
         return false;
       }
+      // Hide Campaigns menu for driver role
+      if (user.role === 'driver' && item.menuKey === 'campaigns') {
+        return false;
+      }
       // Show Expenses menu to client_servicing role and to users with permission
       if (item.menuKey === 'expenses') {
         // If user is client_servicing, always show

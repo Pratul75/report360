@@ -44,3 +44,5 @@ class ExpenseRepository(BaseRepository):
         result = await db.execute(query)
         total = result.scalar()
         return float(total) if total else 0.0
+
+
