@@ -15,7 +15,7 @@ const allSidebarItems = [
   { path: '/driver-dashboard', icon: Truck, label: 'Driver Dashboard', menuKey: 'driver-dashboard' },
   { path: '/clients', icon: Users, label: 'Clients', menuKey: 'clients' },
   { path: '/projects', icon: Briefcase, label: 'Projects', menuKey: 'projects' },
-  { path: '/campaigns', icon: Megaphone, label: 'Campaigns', menuKey: 'campaigns', excludeForRoles: ['vendors','godown_manager'] },
+  { path: '/campaigns', icon: Megaphone, label: 'Campaigns', menuKey: 'campaigns', excludeForRoles: ['vendor','godown_manager'] },
   { path: '/vendors', icon: Building2, label: 'Vendors', menuKey: 'vendors' },
   { path: '/vehicles', icon: Truck, label: 'Vehicles', menuKey: 'vehicles' },
   { path: '/drivers', icon: UserCircle, label: 'Drivers', menuKey: 'drivers' },

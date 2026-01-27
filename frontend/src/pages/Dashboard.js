@@ -123,7 +123,7 @@ const Dashboard = () => {
           testId="stat-vehicles-on-ground"
         />
         <StatCard
-          title="Today's Expense"
+          title="Total Expense"
           value={formatCurrency(stats?.todays_expense || 0)}
           icon={DollarSign}
           color="text-amber-600"
