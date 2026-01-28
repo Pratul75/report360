@@ -93,7 +93,7 @@ services:
       PMA_USER: ${MYSQL_USER:-fleetuser}
       PMA_PASSWORD: ${MYSQL_PASSWORD:-fleetpass123}
     ports:
-      - "127.0.0.1:8080:80"
+      - "0.0.0.0:8085:80"
     depends_on:
       - mysql
     networks:
