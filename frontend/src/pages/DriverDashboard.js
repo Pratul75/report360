@@ -23,7 +23,7 @@ const DriverDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = user.role;
   const isDriver = userRole === 'driver';
-  const isAdminOrOps = ['admin', 'operations_manager'].includes(userRole);
+  const isAdminOrOps = ['admin', 'operations_manager', 'sales', 'client_servicing'].includes(userRole);
 
   // For drivers - fetch their own dashboard
   const { data: dashboardData, isLoading: driverLoading, error: driverError, refetch } = useQuery({
@@ -163,7 +163,7 @@ const DriverDashboard = () => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Driver Dashboard</h1>
-              <p className="text-gray-600 mt-1">Monitor all drivers - {userRole === 'admin' ? 'Admin' : 'Operations Manager'} View</p>
+              <p className="text-gray-600 mt-1">Monitor all drivers - {['admin', 'operations_manager'].includes(userRole) ? (userRole === 'admin' ? 'Admin' : 'Operations Manager') : userRole === 'sales' ? 'Sales' : 'Client Servicing'} View</p>
             </div>
             <div className="flex items-center gap-3">
               <input

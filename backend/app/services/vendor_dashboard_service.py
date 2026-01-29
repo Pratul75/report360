@@ -24,21 +24,26 @@ class VendorDashboardService:
         """Get vendor_id from authenticated user (dict from JWT)"""
         user_role = user.get("role") if isinstance(user, dict) else user.role
         user_vendor_id = user.get("vendor_id") if isinstance(user, dict) else user.vendor_id
-        
+
         if user_role == "admin":
             return None  # Admin can see all
         
+        # Sales and Client Servicing can see all vendors (admin-level access)
+        if user_role in ["sales", "client_servicing"]:
+            return None  # See all vendors like admin
+        
+        # Only vendor role has vendor-specific access
         if user_role == "vendor":
             if not user_vendor_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Vendor user must be linked to a vendor"
+                    detail="User must be linked to a vendor"
                 )
             return user_vendor_id
         
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only vendors and admins can access vendor dashboard"
+            detail="Only vendors, sales, and client_servicing can access vendor dashboard"
         )
     
     async def get_dashboard_data(self, user, vendor_id: Optional[int] = None) -> VendorDashboardData:

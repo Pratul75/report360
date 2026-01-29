@@ -46,6 +46,7 @@ class User(Base):
     name = Column(String(255), nullable=False)
     phone = Column(String(20))
     password_hash = Column(String(255), nullable=False)
+    password_hint = Column(String(255), nullable=True)  # Temporary password hint
     role = Column(Enum(UserRole), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -22,20 +22,8 @@ export const usePermissions = () => {
           return;
         }
 
-        // Try to get from localStorage first (set during login)
-        const storedPermissions = localStorage.getItem('permissions');
-        const storedMenuItems = localStorage.getItem('menu_items');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        
-        if (storedPermissions && storedMenuItems) {
-          setPermissions(JSON.parse(storedPermissions));
-          setMenuItems(JSON.parse(storedMenuItems));
-          setRole(user.role);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch user's permissions from backend as fallback
+        // Always fetch from backend to get fresh permissions and menu visibility
+        // This ensures real-time updates when permissions change
         const response = await axios.get(`${API_URL}/roles/my-permissions`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -45,10 +33,27 @@ export const usePermissions = () => {
         setPermissions(response.data.permissions || []);
         setMenuItems(response.data.menu_visibility || []);
         setRole(response.data.role);
+        
+        console.log('✅ Fresh permissions loaded from backend:', {
+          role: response.data.role,
+          permissions: response.data.permissions,
+          menu_items: response.data.menu_visibility
+        });
       } catch (error) {
         console.error('Failed to fetch permissions:', error);
-        setPermissions([]);
-        setMenuItems([]);
+        // Fallback: try localStorage as last resort
+        const storedPermissions = localStorage.getItem('permissions');
+        const storedMenuItems = localStorage.getItem('menu_items');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        if (storedPermissions && storedMenuItems) {
+          setPermissions(JSON.parse(storedPermissions));
+          setMenuItems(JSON.parse(storedMenuItems));
+          setRole(user.role);
+        } else {
+          setPermissions([]);
+          setMenuItems([]);
+        }
       } finally {
         setLoading(false);
       }

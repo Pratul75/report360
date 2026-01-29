@@ -131,15 +131,30 @@ const RolesPermissions = () => {
         'Vendor payments',
       ],
     },
+    sales: {
+      name: 'Sales',
+      description: 'Client and project management with campaign operations',
+      color: 'yellow',
+      permissions: [
+        'Client creation and updates',
+        'Project creation and updates',
+        'Campaign creation and updates',
+        'Vendor management',
+        'Commands/Operations access',
+        'Reports and analytics',
+      ],
+    },
     client_servicing: {
       name: 'Client Servicing',
-      description: 'Client relationship management',
+      description: 'Client and project management with campaign operations (same as Sales)',
       color: 'purple',
       permissions: [
-        'Client dashboard',
-        'Campaign status',
-        'Vehicle tracking',
-        'Client reports',
+        'Client creation and updates',
+        'Project creation and updates',
+        'Campaign creation and updates',
+        'Vendor management',
+        'Commands/Operations access',
+        'Reports and analytics',
       ],
     },
     vendor: {
@@ -198,6 +213,7 @@ const RolesPermissions = () => {
       orange: 'bg-orange-100 text-orange-700 border-orange-300',
       indigo: 'bg-indigo-100 text-indigo-700 border-indigo-300',
       pink: 'bg-pink-100 text-pink-700 border-pink-300',
+      yellow: 'bg-yellow-100 text-yellow-700 border-yellow-300',
     };
     return colors[color] || 'bg-gray-100 text-gray-700 border-gray-300';
   };

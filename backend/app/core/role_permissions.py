@@ -118,7 +118,7 @@ class RolePermissions:
         # ADMIN - Full access to everything
         "admin": [perm for perm in Permission],
         
-        # SALES - Project creation, client management, vendor selection
+        # SALES - Same access as Client Servicing: Project creation, client management, vendor selection, campaign management
         "sales": [
             Permission.CLIENT_CREATE,
             Permission.CLIENT_READ,
@@ -126,10 +126,28 @@ class RolePermissions:
             Permission.PROJECT_CREATE,
             Permission.PROJECT_READ,
             Permission.PROJECT_UPDATE,
+            Permission.CAMPAIGN_CREATE,
             Permission.CAMPAIGN_READ,
+            Permission.CAMPAIGN_UPDATE,
+            Permission.VENDOR_CREATE,
             Permission.VENDOR_READ,
+            Permission.VENDOR_UPDATE,
+            Permission.VEHICLE_CREATE,
+            Permission.VEHICLE_READ,
+            Permission.VEHICLE_UPDATE,
+            Permission.DRIVER_CREATE,
+            Permission.DRIVER_READ,
+            Permission.DRIVER_UPDATE,
+            Permission.PROMOTER_READ,
+            Permission.PROMOTER_ACTIVITY_READ,
+            Permission.REPORT_CREATE,
             Permission.REPORT_READ,
+            Permission.REPORT_UPDATE,
+            Permission.EXPENSE_READ,
             Permission.DASHBOARD_VIEW,
+            Permission.VENDOR_DASHBOARD_VIEW,
+            Permission.CLIENT_SERVICING_DASHBOARD_VIEW,
+            Permission.DRIVER_DASHBOARD_VIEW,
         ],
         
         # PURCHASE - Budget confirmation, vendor costing
@@ -143,18 +161,26 @@ class RolePermissions:
             Permission.DASHBOARD_VIEW,
         ],
         
-        # CLIENT_SERVICING - Project ownership, operations assignment
+        # CLIENT_SERVICING - Client & project management, operations assignment (same as sales)
         "client_servicing": [
+            Permission.CLIENT_CREATE,
             Permission.CLIENT_READ,
+            Permission.CLIENT_UPDATE,
             Permission.PROJECT_CREATE,
             Permission.PROJECT_READ,
             Permission.PROJECT_UPDATE,
             Permission.CAMPAIGN_CREATE,
             Permission.CAMPAIGN_READ,
             Permission.CAMPAIGN_UPDATE,
+            Permission.VENDOR_CREATE,
             Permission.VENDOR_READ,
+            Permission.VENDOR_UPDATE,
+            Permission.VEHICLE_CREATE,
             Permission.VEHICLE_READ,
+            Permission.VEHICLE_UPDATE,
+            Permission.DRIVER_CREATE,
             Permission.DRIVER_READ,
+            Permission.DRIVER_UPDATE,
             Permission.PROMOTER_READ,
             Permission.PROMOTER_ACTIVITY_READ,
             Permission.REPORT_CREATE,
@@ -162,7 +188,9 @@ class RolePermissions:
             Permission.REPORT_UPDATE,
             Permission.EXPENSE_READ,
             Permission.DASHBOARD_VIEW,
+            Permission.VENDOR_DASHBOARD_VIEW,
             Permission.CLIENT_SERVICING_DASHBOARD_VIEW,
+            Permission.DRIVER_DASHBOARD_VIEW,
         ],
         
         # OPERATIONS_MANAGER - Campaign execution and monitoring
@@ -360,9 +388,9 @@ ROLES_WITH_SETTINGS_ACCESS = [
 # Frontend menu visibility matrix
 MENU_VISIBILITY = {
     "admin": ["dashboard", "clients", "projects", "campaigns", "vendors", "vendor-dashboard", "client-servicing-dashboard", "driver-dashboard", "vehicles", "drivers", "promoters", "promoter-activities", "operations", "expenses", "reports", "accounts", "analytics", "settings"],
-    "sales": ["dashboard", "clients", "projects", "campaigns", "vendors", "reports"],
+    "sales": ["dashboard", "vendor-dashboard", "client-servicing-dashboard", "driver-dashboard", "clients", "projects", "campaigns", "reports", "operations", "vendors", "vehicles", "drivers"],
     "purchase": ["dashboard", "vendors", "projects", "campaigns"],
-    "client_servicing": ["dashboard", "client-servicing-dashboard", "clients", "projects", "campaigns", "reports", "operations", "vendors", "vehicles"],
+    "client_servicing": ["dashboard", "vendor-dashboard", "client-servicing-dashboard", "driver-dashboard", "clients", "projects", "campaigns", "reports", "operations", "vendors", "vehicles", "drivers"],
     "operations_manager": ["dashboard", "driver-dashboard", "projects", "campaigns", "operations", "drivers", "vehicles", "promoters", "promoter-activities", "expenses", "reports"],
     "operator": ["dashboard", "campaigns", "operations", "drivers", "vehicles", "vendors", "promoters", "promoter-activities"],
     "driver": ["dashboard", "driver-dashboard", "expenses", "campaigns"],

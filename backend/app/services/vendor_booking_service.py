@@ -265,9 +265,19 @@ class VendorBookingService:
         campaign_id: Optional[int] = None,
         assignment_date: Optional[date] = None
     ) -> List[Dict[str, Any]]:
-        """Get all assignments for vendor's drivers"""
-        # Get vendor's drivers
-        driver_query = select(Driver.id).where(Driver.vendor_id == vendor_id)
+        """Get all assignments for vendor's drivers (or all if vendor_id is None)"""
+        # If vendor_id is None (admin/sales/client_servicing), get all drivers
+        if vendor_id is None:
+            driver_query = select(Driver.id).where(Driver.is_active == 1)
+        else:
+            # Get vendor's drivers only
+            driver_query = select(Driver.id).where(
+                and_(
+                    Driver.vendor_id == vendor_id,
+                    Driver.is_active == 1
+                )
+            )
+        
         driver_result = await db.execute(driver_query)
         driver_ids = [row[0] for row in driver_result.fetchall()]
         

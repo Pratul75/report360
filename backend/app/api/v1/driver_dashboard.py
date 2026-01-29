@@ -72,15 +72,16 @@ async def get_my_dashboard(
 ):
     """
     Get driver's own dashboard data
-    Driver can only see their own data
+    Driver can see their own data
+    Admin/Sales/Client Servicing should use /driver-dashboard/driver/{id} endpoint
     """
     # Get driver_id by matching email from drivers table
     if current_user.get("role") == "driver":
         driver_id = await get_driver_id_from_user(current_user, db)
         if not driver_id:
             raise HTTPException(404, "Driver record not found. Please contact administrator.")
-    elif current_user.get("role") in ["admin", "operations_manager"]:
-        raise HTTPException(400, "Admin users should use /driver-dashboard/driver/{id} endpoint")
+    elif current_user.get("role") in ["admin", "operations_manager", "sales", "client_servicing"]:
+        raise HTTPException(400, "Admin/Sales/Client Servicing users should use /driver-dashboard/driver/{id} endpoint")
     else:
         raise HTTPException(403, "Access denied")
     
@@ -302,9 +303,9 @@ async def get_driver_dashboard_admin(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get specific driver's dashboard (Admin/Operations only)"""
-    if current_user.get("role") not in ["admin", "operations_manager"]:
-        raise HTTPException(403, "Only admin/operations can view other drivers' dashboards")
+    """Get specific driver's dashboard (Admin/Operations/Sales/Client Servicing)"""
+    if current_user.get("role") not in ["admin", "operations_manager", "sales", "client_servicing"]:
+        raise HTTPException(403, "Only admin/operations/sales/client_servicing can view drivers' dashboards")
     
     try:
         data = await DriverDashboardService.get_driver_dashboard_data(db, driver_id, target_date)
@@ -323,9 +324,9 @@ async def get_all_drivers_summary(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get summary for all drivers (Admin/Operations Manager)"""
-    if current_user.get("role") not in ["admin", "operations_manager"]:
-        raise HTTPException(403, "Only admin or operations manager can view all drivers summary")
+    """Get summary for all drivers (Admin/Operations Manager/Sales/Client Servicing)"""
+    if current_user.get("role") not in ["admin", "operations_manager", "sales", "client_servicing"]:
+        raise HTTPException(403, "Only admin/operations/sales/client_servicing can view all drivers summary")
     
     if not target_date:
         target_date = date.today()

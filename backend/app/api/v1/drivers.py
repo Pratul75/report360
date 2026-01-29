@@ -16,6 +16,7 @@ from sqlalchemy import select
 
 from app.database.connection import get_db
 from app.repositories.driver_repo import DriverRepository
+from app.services.driver_service import DriverService
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverResponse
 from app.models.driver import Driver
 from app.core.role_permissions import Permission
@@ -45,10 +46,14 @@ async def create_driver(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_permission(Permission.DRIVER_CREATE))
 ):
-    repo = DriverRepository()
-    driver = await repo.create(db, driver_data.model_dump())
-    created_driver = await repo.get_by_id(db, driver.id)
-    return DriverResponse.model_validate(created_driver)
+    """
+    Create a new driver and automatically create a user account if email is provided
+    
+    Note: User account creation is automatic when email is provided in driver data
+    """
+    service = DriverService()
+    driver = await service.create_driver_with_user(db, driver_data.model_dump())
+    return DriverResponse.model_validate(driver)
 
 # -------------------------------------------------------------------
 # Get All Drivers

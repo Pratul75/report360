@@ -28,15 +28,19 @@ async def check_user_permission(db: AsyncSession, user_role: str, permission_nam
         """)
         
         result = await db.execute(query, {"role_name": user_role, "permission_name": permission_name})
-        return result.scalar() is not None
+        has_db_perm = result.scalar() is not None
+        if has_db_perm:
+            return True
     except Exception as e:
-        # Fallback to hardcoded permissions
-        try:
-            user_role_enum = UserRole(user_role)
-            permission_enum = Permission(permission_name)
-            return RolePermissions.has_permission(user_role_enum, permission_enum)
-        except ValueError:
-            return False
+        pass  # Fall through to hardcoded check
+    
+    # Fallback to hardcoded permissions
+    try:
+        user_role_enum = UserRole(user_role)
+        permission_enum = Permission(permission_name)
+        return RolePermissions.has_permission(user_role_enum, permission_enum)
+    except ValueError:
+        return False
 
 
 async def get_current_active_user(current_user: dict = Depends(get_current_user)):

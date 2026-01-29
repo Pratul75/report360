@@ -27,31 +27,37 @@ async def get_vendor_id(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> int:
-    """Get vendor_id for current user, ensure vendor or admin role"""
+    """Get vendor_id for current user, ensure vendor, admin, sales, or client_servicing role"""
     role = current_user.get("role")
     
     if role == "admin":
-        # Admin can act as any vendor via query param
-        return None  # Will be handled in endpoints
+        # Admin can see all vendors
+        return None
     
-    if role != "vendor":
+    # Allow vendor, sales, and client_servicing roles to access
+    if role not in ["vendor", "sales", "client_servicing"]:
         raise HTTPException(
             status_code=403,
-            detail="Only vendors can access this functionality"
+            detail="Only vendors, sales, and client_servicing can access this functionality"
         )
     
-    # Get vendor_id from user
-    vendor_id = await VendorBookingService.get_vendor_id_from_user(
-        db, current_user.get("user_id")
-    )
+    # For sales and client_servicing, return None to see all vendors (like admin)
+    if role in ["sales", "client_servicing"]:
+        return None
     
-    if not vendor_id:
-        raise HTTPException(
-            status_code=404,
-            detail="Vendor account not found for this user"
+    # Only vendors need vendor_id from their user record
+    if role == "vendor":
+        vendor_id = await VendorBookingService.get_vendor_id_from_user(
+            db, current_user.get("user_id")
         )
-    
-    return vendor_id
+        
+        if not vendor_id:
+            raise HTTPException(
+                status_code=404,
+                detail="Vendor account not found for this user"
+            )
+        
+        return vendor_id
 
 
 @router.get("/campaigns", response_model=List[VendorCampaignInfo])

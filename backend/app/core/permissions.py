@@ -45,7 +45,7 @@ class Permission:
     
     @staticmethod
     def require_operations():
-        return Permission.require_roles([UserRole.ADMIN, UserRole.OPERATIONS_MANAGER])
+        return Permission.require_roles([UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.SALES, UserRole.CLIENT_SERVICING])
     
     @staticmethod
     def require_accounts():

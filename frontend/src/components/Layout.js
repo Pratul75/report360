@@ -55,21 +55,6 @@ const Layout = () => {
     });
     
     return allSidebarItems.filter(item => {
-      // Hide Vendor and Operations menu for client_servicing role
-      if (user.role === 'client_servicing' && ['vendors', 'operations'].includes(item.menuKey)) {
-        return false;
-      }
-      // Hide Campaigns menu for driver role
-      if (user.role === 'driver' && item.menuKey === 'campaigns') {
-        return false;
-      }
-      // Show Expenses menu to client_servicing role and to users with permission
-      if (item.menuKey === 'expenses') {
-        // If user is client_servicing, always show
-        if (user.role === 'client_servicing') return true;
-        // Otherwise, show only if user has permission
-        return isMenuVisible('expenses');
-      }
       // Check if role is excluded for this menu item
       if (item.excludeForRoles && item.excludeForRoles.includes(user.role)) {
         return false;
@@ -79,6 +64,10 @@ const Layout = () => {
         const hasRequiredRole = item.requiredPermissions.includes(user.role);
         console.log(`Menu item "${item.label}": requiredPermissions=${JSON.stringify(item.requiredPermissions)}, userRole="${user.role}", visible=${hasRequiredRole}`);
         return hasRequiredRole;
+      }
+      // Hide Campaigns menu for driver role
+      if (user.role === 'driver' && item.menuKey === 'campaigns') {
+        return false;
       }
       // Show 'Accounts & Payments' only to admin or account role
       if (item.menuKey === 'accounts') {
