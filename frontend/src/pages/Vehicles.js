@@ -3,16 +3,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vehiclesAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Truck, Trash2 } from 'lucide-react';
+import { Plus, Truck, Trash2, Power } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 import { usePermissions } from '@/hooks/usePermissions';
+import ToggleStatusModal from '@/components/common/ToggleStatusModal';
 
 const Vehicles = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
+  const [toggleModal, setToggleModal] = React.useState(null);
   
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -30,10 +32,46 @@ const Vehicles = () => {
     },
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: (data) => {
+      const payload = { 
+        is_active: data.is_active
+      };
+      if (data.inactive_reason) {
+        payload.inactive_reason = data.inactive_reason;
+      }
+      return vehiclesAPI.toggleStatus(data.id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['vehicles']);
+      toast.success('Vehicle status updated successfully!');
+      setToggleModal(null);
+    },
+    onError: (error) => {
+      const errorMessage = 
+        typeof error.response?.data?.detail === 'string' 
+          ? error.response.data.detail 
+          : 'Failed to update vehicle status';
+      toast.error(errorMessage);
+    },
+  });
+
   const handleDelete = (id, name) => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleToggleStatus = (vehicle) => {
+    setToggleModal({ vehicle, isActive: vehicle.is_active });
+  };
+
+  const handleConfirmToggle = (statusData) => {
+    toggleStatusMutation.mutate({
+      id: toggleModal.vehicle.id,
+      is_active: !toggleModal.isActive,
+      inactive_reason: statusData.inactive_reason,
+    });
   };
 
   return (
@@ -59,13 +97,29 @@ const Vehicles = () => {
           vehicles?.map((vehicle) => (
             <Card key={vehicle.id} data-testid="vehicle-card">
               <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <Truck className="h-6 w-6 text-indigo-600" />
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <Truck className="h-6 w-6 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">{vehicle.vehicle_number}</h3>
+                      <p className="text-sm text-slate-600">{vehicle.vehicle_type}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{vehicle.vehicle_number}</h3>
-                    <p className="text-sm text-slate-600">{vehicle.vehicle_type}</p>
+                  <div className="flex flex-col gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${
+                      vehicle.is_active 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {vehicle.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    {vehicle.inactive_reason && !vehicle.is_active && (
+                      <span className="text-xs text-slate-500 max-w-[120px] text-center">
+                        {vehicle.inactive_reason}
+                      </span>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -79,7 +133,24 @@ const Vehicles = () => {
                   <span className="font-medium">{formatDate(vehicle.insurance_validity)}</span>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button variant="outline" className="flex-1" onClick={() => navigate(`/vehicles/${vehicle.id}`)}>View Details</Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1" 
+                    onClick={() => navigate(`/vehicles/${vehicle.id}`, { state: { from: { pathname: '/vehicles' } } })}
+                  >
+                    View Details
+                  </Button>
+                  {hasPermission('vehicle.update') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleStatus(vehicle)}
+                      disabled={toggleStatusMutation.isPending}
+                      className={vehicle.is_active ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}
+                    >
+                      <Power className="w-4 h-4" />
+                    </Button>
+                  )}
                   {hasPermission('vehicle.delete') && (
                     <Button
                       variant="destructive"
@@ -96,6 +167,18 @@ const Vehicles = () => {
           ))
         )}
       </div>
+
+      {toggleModal && (
+        <ToggleStatusModal
+          isOpen={!!toggleModal}
+          onClose={() => setToggleModal(null)}
+          isActive={toggleModal.isActive}
+          itemName={toggleModal.vehicle.vehicle_number}
+          itemType="Vehicle"
+          onConfirm={handleConfirmToggle}
+          isLoading={toggleStatusMutation.isPending}
+        />
+      )}
     </div>
   );
 };

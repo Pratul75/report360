@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Date, ForeignKey
+from sqlalchemy import Column, String, Date, ForeignKey, Boolean, Text
 from sqlalchemy.orm import relationship
 from app.models.base import Base, BaseModel
 from sqlalchemy import Integer
@@ -14,6 +14,8 @@ class Driver(Base, BaseModel):
     license_image = Column(String(255))
     vendor_id = Column(Integer, ForeignKey("vendors.id", ondelete="SET NULL"))
     vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="SET NULL"))  # Assigned vehicle
+    is_active = Column(Boolean, default=True, nullable=False)
+    inactive_reason = Column(Text, nullable=True)
     
     # Relationships
     vendor = relationship("Vendor", back_populates="drivers")

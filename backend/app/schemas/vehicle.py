@@ -30,8 +30,13 @@ class VehicleUpdate(BaseModel):
 class VehicleResponse(VehicleBase):
     id: int
     is_active: bool
+    inactive_reason: Optional[str] = None
     created_at: datetime
     vendor: Optional[VendorResponse] = None
     
     class Config:
         from_attributes = True
+
+class ToggleVehicleStatusRequest(BaseModel):
+    is_active: bool
+    inactive_reason: Optional[str] = None

@@ -18,3 +18,4 @@ class Project(Base, BaseModel):
     client = relationship("Client", back_populates="projects")
     cs_user = relationship("User", foreign_keys=[assigned_cs], backref="assigned_projects")
     campaigns = relationship("Campaign", back_populates="project", cascade="all, delete-orphan")
+    fields = relationship("ProjectField", back_populates="project", cascade="all, delete-orphan")

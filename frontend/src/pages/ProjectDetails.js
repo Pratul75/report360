@@ -72,6 +72,28 @@ const ProjectDetails = () => {
           <div className="text-sm text-slate-500 mt-3">Created: {formatDate(project.created_at)}</div>
         </div>
       </div>
+
+      {/* Dynamic Fields Section */}
+      {project.fields && project.fields.length > 0 && (
+        <div className="mt-6 bg-white p-4 rounded shadow">
+          <h3 className="font-semibold mb-3">Custom Fields</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {project.fields.map((field, index) => (
+              <div key={field.id || index} className="border-l-4 border-blue-500 pl-3">
+                <div className="font-medium text-sm">{field.field_name}</div>
+                <div className="text-xs text-gray-500 capitalize">
+                  Type: {field.field_type} {field.required && '(Required)'}
+                </div>
+                {field.field_type === 'dropdown' && field.options && field.options.length > 0 && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    Options: {field.options.join(', ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

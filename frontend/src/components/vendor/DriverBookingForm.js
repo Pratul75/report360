@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { vendorBookingAPI } from '../../lib/api';
+import { vendorBookingAPI, driversAPI, vehiclesAPI, campaignsAPI } from '../../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,24 +8,44 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import { toast } from 'react-hot-toast';
-import { Loader2, X, CheckCircle } from 'lucide-react';
+import { Loader2, X, CheckCircle, Power, Calendar } from 'lucide-react';
+import ToggleStatusModal from '../common/ToggleStatusModal';
 
 const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCancel }) => {
   const queryClient = useQueryClient();
+  const [toggleModal, setToggleModal] = useState(null);
   
   const [formData, setFormData] = useState({
     campaign_id: campaignId,
     driver_id: '',
     vehicle_id: '',
     assignment_date: new Date().toISOString().split('T')[0],
+    assignment_start_date: '',
+    assignment_end_date: '',
     work_title: '',
     work_description: '',
     village_name: '',
     location_address: '',
-    expected_start_time: '09:00',
-    expected_end_time: '17:00',
     remarks: ''
   });
+
+  // Fetch campaign details to get start/end dates
+  const { data: campaignDetails, isLoading: campaignLoading } = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => campaignsAPI.getOne(campaignId).then(res => res.data),
+    enabled: !!campaignId
+  });
+
+  // Auto-fill campaign dates when campaign data is loaded
+  useEffect(() => {
+    if (campaignDetails && campaignDetails.start_date && campaignDetails.end_date) {
+      setFormData(prev => ({
+        ...prev,
+        assignment_start_date: campaignDetails.start_date,
+        assignment_end_date: campaignDetails.end_date
+      }));
+    }
+  }, [campaignDetails]);
 
   // Fetch drivers - backend automatically uses current user's vendor_id if not provided
   const { data: driversResponse, isLoading: driversLoading, error: driversError } = useQuery({
@@ -73,6 +93,36 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
     }
   });
 
+  const toggleDriverStatusMutation = useMutation({
+    mutationFn: (data) => driversAPI.toggleStatus(data.id, {
+      is_active: data.is_active,
+      inactive_reason: data.inactive_reason,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['vendorDrivers']);
+      toast.success('Driver status updated successfully!');
+      setToggleModal(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update driver status');
+    },
+  });
+
+  const toggleVehicleStatusMutation = useMutation({
+    mutationFn: (data) => vehiclesAPI.toggleStatus(data.id, {
+      is_active: data.is_active,
+      inactive_reason: data.inactive_reason,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['vendorVehicles']);
+      toast.success('Vehicle status updated successfully!');
+      setToggleModal(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to update vehicle status');
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -89,8 +139,44 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
       toast.error('Please enter work title');
       return;
     }
+
+    // Validate assignment date is within campaign date range
+    if (campaignDetails && campaignDetails.start_date && campaignDetails.end_date) {
+      const assignmentDate = new Date(formData.assignment_date);
+      const campaignStart = new Date(campaignDetails.start_date);
+      const campaignEnd = new Date(campaignDetails.end_date);
+      
+      if (assignmentDate < campaignStart || assignmentDate > campaignEnd) {
+        toast.error(`Assignment date must be between campaign dates (${campaignDetails.start_date} to ${campaignDetails.end_date})`);
+        return;
+      }
+    }
     
     createMutation.mutate(formData);
+  };
+
+  const handleToggleDriver = (driver) => {
+    setToggleModal({ type: 'driver', item: driver, isActive: driver.is_active });
+  };
+
+  const handleToggleVehicle = (vehicle) => {
+    setToggleModal({ type: 'vehicle', item: vehicle, isActive: vehicle.is_active });
+  };
+
+  const handleConfirmToggle = (statusData) => {
+    if (toggleModal.type === 'driver') {
+      toggleDriverStatusMutation.mutate({
+        id: toggleModal.item.id,
+        is_active: !toggleModal.isActive,
+        inactive_reason: statusData.inactive_reason,
+      });
+    } else {
+      toggleVehicleStatusMutation.mutate({
+        id: toggleModal.item.id,
+        is_active: !toggleModal.isActive,
+        inactive_reason: statusData.inactive_reason,
+      });
+    }
   };
 
   const handleChange = (field, value) => {
@@ -108,6 +194,11 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
         </div>
         <p className="text-sm text-gray-600 mt-1">
           Campaign: <strong>{campaignName}</strong>
+          {campaignDetails && (
+            <span className="ml-2 text-xs text-blue-600">
+              ({campaignDetails.start_date} to {campaignDetails.end_date})
+            </span>
+          )}
         </p>
       </CardHeader>
       
@@ -126,20 +217,40 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
                 Error loading drivers: {driversError.message}
               </div>
             ) : drivers && drivers.length > 0 ? (
-              <select
-                id="driver_id"
-                value={formData.driver_id}
-                onChange={(e) => handleChange('driver_id', parseInt(e.target.value))}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Choose Driver ({drivers.length} available)</option>
-                {drivers.map(driver => (
-                  <option key={driver.id} value={driver.id}>
-                    {driver.name} ({driver.phone}) {driver.license_number && `- License: ${driver.license_number}`}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  id="driver_id"
+                  value={formData.driver_id}
+                  onChange={(e) => handleChange('driver_id', parseInt(e.target.value))}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Choose Driver ({drivers.length} available)</option>
+                  {drivers.map(driver => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.name} ({driver.phone}) {driver.license_number && `- License: ${driver.license_number}`}
+                    </option>
+                  ))}
+                </select>
+                {formData.driver_id && (
+                  <div className="mt-2 flex gap-1">
+                    {drivers.filter(d => d.id === parseInt(formData.driver_id)).map(driver => (
+                      <Button
+                        key={driver.id}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleDriver(driver)}
+                        disabled={toggleDriverStatusMutation.isPending}
+                        className={driver.is_active ? 'text-red-600 text-xs' : 'text-green-600 text-xs'}
+                      >
+                        <Power className="w-3 h-3 mr-1" />
+                        {driver.is_active ? 'Deactivate' : 'Reactivate'}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-sm text-amber-600 mt-1 p-2 bg-amber-50 rounded border border-amber-200">
                 कोई active driver उपलब्ध नहीं है। कृपया पहले अपने vendor account में drivers जोड़ें।
@@ -160,20 +271,40 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
                 Error loading vehicles: {vehiclesError.message}
               </div>
             ) : vehicles && vehicles.length > 0 ? (
-              <select
-                id="vehicle_id"
-                value={formData.vehicle_id}
-                onChange={(e) => handleChange('vehicle_id', parseInt(e.target.value))}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Choose Vehicle ({vehicles.length} available)</option>
-                {vehicles.map(vehicle => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {vehicle.vehicle_number} {vehicle.vehicle_type && `(${vehicle.vehicle_type})`}
-                  </option>
-                ))}
-              </select>
+              <>
+                <select
+                  id="vehicle_id"
+                  value={formData.vehicle_id}
+                  onChange={(e) => handleChange('vehicle_id', parseInt(e.target.value))}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Choose Vehicle ({vehicles.length} available)</option>
+                  {vehicles.map(vehicle => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {vehicle.vehicle_number} {vehicle.vehicle_type && `(${vehicle.vehicle_type})`}
+                    </option>
+                  ))}
+                </select>
+                {formData.vehicle_id && (
+                  <div className="mt-2 flex gap-1">
+                    {vehicles.filter(v => v.id === parseInt(formData.vehicle_id)).map(vehicle => (
+                      <Button
+                        key={vehicle.id}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleToggleVehicle(vehicle)}
+                        disabled={toggleVehicleStatusMutation.isPending}
+                        className={vehicle.is_active ? 'text-red-600 text-xs' : 'text-green-600 text-xs'}
+                      >
+                        <Power className="w-3 h-3 mr-1" />
+                        {vehicle.is_active ? 'Deactivate' : 'Reactivate'}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-sm text-amber-600 mt-1 p-2 bg-amber-50 rounded border border-amber-200">
                 कोई active vehicle उपलब्ध नहीं है। कृपया पहले अपने vendor account में vehicles जोड़ें।
@@ -189,9 +320,15 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
               id="assignment_date"
               value={formData.assignment_date}
               onChange={(e) => handleChange('assignment_date', e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
+              min={campaignDetails?.start_date || new Date().toISOString().split('T')[0]}
+              max={campaignDetails?.end_date}
               required
             />
+            {campaignDetails && (
+              <p className="text-xs text-gray-500 mt-1">
+                Must be within campaign period ({campaignDetails.start_date} to {campaignDetails.end_date})
+              </p>
+            )}
           </div>
 
           {/* Work Title */}
@@ -252,26 +389,44 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
             </div>
           </div>
 
-          {/* Time Schedule */}
+          {/* Assignment Date Range - Auto-filled from Campaign */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="expected_start_time">Expected Start Time</Label>
+              <Label htmlFor="assignment_start_date" className="flex items-center gap-2">
+                Assignment Start Date
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">From Campaign</span>
+              </Label>
               <Input
-                type="time"
-                id="expected_start_time"
-                value={formData.expected_start_time}
-                onChange={(e) => handleChange('expected_start_time', e.target.value)}
+                type="date"
+                id="assignment_start_date"
+                value={formData.assignment_start_date}
+                disabled
+                className="mt-1 bg-gray-50 border-gray-200 text-gray-700 cursor-not-allowed"
               />
+              {campaignLoading && (
+                <p className="text-xs text-gray-500 mt-1">Loading campaign dates...</p>
+              )}
             </div>
             
             <div>
-              <Label htmlFor="expected_end_time">Expected End Time</Label>
+              <Label htmlFor="assignment_end_date" className="flex items-center gap-2">
+                Assignment End Date
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">From Campaign</span>
+              </Label>
               <Input
-                type="time"
-                id="expected_end_time"
-                value={formData.expected_end_time}
-                onChange={(e) => handleChange('expected_end_time', e.target.value)}
+                type="date"
+                id="assignment_end_date"
+                value={formData.assignment_end_date}
+                disabled
+                className="mt-1 bg-gray-50 border-gray-200 text-gray-700 cursor-not-allowed"
               />
+              {formData.assignment_start_date && formData.assignment_end_date && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Duration: {Math.ceil((new Date(formData.assignment_end_date) - new Date(formData.assignment_start_date)) / (1000 * 60 * 60 * 24))} days
+                </p>
+              )}
             </div>
           </div>
 
@@ -312,6 +467,18 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
           </div>
         </form>
       </CardContent>
+
+      {toggleModal && (
+        <ToggleStatusModal
+          isOpen={!!toggleModal}
+          onClose={() => setToggleModal(null)}
+          isActive={toggleModal.isActive}
+          itemName={toggleModal.type === 'driver' ? toggleModal.item.name : toggleModal.item.vehicle_number}
+          itemType={toggleModal.type === 'driver' ? 'Driver' : 'Vehicle'}
+          onConfirm={handleConfirmToggle}
+          isLoading={toggleModal.type === 'driver' ? toggleDriverStatusMutation.isPending : toggleVehicleStatusMutation.isPending}
+        />
+      )}
     </Card>
   );
 };

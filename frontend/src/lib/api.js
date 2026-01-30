@@ -32,6 +32,29 @@ api.interceptors.response.use(
 
 export default api;
 
+// Daily activity logs and driver assignments APIs
+export const dailyActivityAPI = {
+  // Daily activity logs
+  createDailyLog: (data) => api.post('/daily-activity/logs/create', data).then(res => res.data),
+  getDailyLog: (id) => api.get(`/daily-activity/logs/${id}`).then(res => res.data),
+  listLogsForAssignment: (assignmentId) => api.get(`/daily-activity/logs/assignment/${assignmentId}`).then(res => res.data),
+  listLogsForDate: (date) => api.get(`/daily-activity/logs/date/${date}`).then(res => res.data),
+  listLogsForDriverCampaign: (campaignId, driverId) => api.get(`/daily-activity/logs/campaign/${campaignId}/driver/${driverId}`).then(res => res.data),
+  updateDailyLog: (id, data) => api.put(`/daily-activity/logs/${id}`, data).then(res => res.data),
+  deleteDailyLog: (id) => api.delete(`/daily-activity/logs/${id}`).then(res => res.data),
+  addVillageToLog: (logId, villageName) => api.post(`/daily-activity/logs/${logId}/add-village?village_name=${encodeURIComponent(villageName)}`).then(res => res.data),
+  addImageToLog: (logId, imageUrl) => api.post(`/daily-activity/logs/${logId}/add-image?image_url=${encodeURIComponent(imageUrl)}`).then(res => res.data),
+  
+  // Activity counts
+  getActivityCountForAssignment: (assignmentId) => api.get(`/daily-activity/count/assignment/${assignmentId}`).then(res => res.data),
+  getActivityCountForDriverInCampaign: (campaignId, driverId) => api.get(`/daily-activity/count/campaign/${campaignId}/driver/${driverId}`).then(res => res.data),
+  getDailyActivityCount: (date) => api.get(`/daily-activity/count/date/${date}`).then(res => res.data),
+  
+  // Driver assignments
+  listAssignmentsForDriver: (driverId) => api.get(`/daily-activity/assignments/driver/${driverId}`).then(res => res.data),
+  listAssignmentsForCampaign: (campaignId) => api.get(`/daily-activity/assignments/campaign/${campaignId}`).then(res => res.data),
+};
+
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (data) => api.post('/auth/register', data),
@@ -63,6 +86,7 @@ export const projectsAPI = {
 export const campaignsAPI = {
   getAll: () => api.get('/campaigns'),
   getOne: (id) => api.get(`/campaigns/${id}`),
+  getForDriver: (driverId) => api.get(`/daily-activity/assignments/driver/${driverId}`).then(res => res.data.assignments?.map(a => ({ id: a.campaign_id, name: a.campaign_name, ...a })) || []),
   create: (data) => api.post('/campaigns', data),
   update: (id, data) => api.put(`/campaigns/${id}`, data),
   delete: (id) => api.delete(`/campaigns/${id}`),
@@ -83,6 +107,7 @@ export const vehiclesAPI = {
   create: (data) => api.post('/vehicles', data),
   update: (id, data) => api.put(`/vehicles/${id}`, data),
   delete: (id) => api.delete(`/vehicles/${id}`),
+  toggleStatus: (id, data) => api.patch(`/vehicles/${id}/toggle-status`, data),
 };
 
 export const driversAPI = {
@@ -93,6 +118,7 @@ export const driversAPI = {
   delete: (id) => api.delete(`/drivers/${id}`),
   uploadLicense: (driverId, formData) =>
   api.post(`/drivers/${driverId}/upload-license`, formData),
+  toggleStatus: (id, data) => api.patch(`/drivers/${id}/toggle-status`, data),
 };
 
 export const promotersAPI = {

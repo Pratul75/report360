@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { expensesAPI, campaignsAPI } from '@/lib/api';
+import { expensesAPI, campaignsAPI, driversAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
@@ -9,12 +9,41 @@ import toast from 'react-hot-toast';
 const ExpenseCreate = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  
+  // Get current user info
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = user.role;
+  const isDriver = userRole === 'driver';
+  
+  // For drivers: get their assigned campaigns only
+  // For others: get all campaigns
   const { data: campaigns = [], isLoading: campaignsLoading } = useQuery({
-    queryKey: ['campaigns'],
-    queryFn: () => campaignsAPI.getAll().then(res => res.data),
+    queryKey: isDriver ? ['driverCampaigns', user.id] : ['campaigns'],
+    queryFn: () => {
+      if (isDriver) {
+        // For drivers, we need to get their driver ID first, then fetch their assigned campaigns
+        return driversAPI.getAll().then(res => {
+          const driverRecord = res.data?.find(d => d.email === user.email);
+          if (driverRecord) {
+            return campaignsAPI.getForDriver(driverRecord.id);
+          }
+          return [];
+        });
+      } else {
+        return campaignsAPI.getAll().then(res => res.data);
+      }
+    },
     retry: 1,
   });
 
+  const { data: drivers = [], isLoading: driversLoading } = useQuery({
+    queryKey: ['drivers'],
+    queryFn: () => driversAPI.getAll().then(res => res.data),
+    retry: 1,
+    enabled: !isDriver, // Don't show driver dropdown for drivers
+  });
+
+  const [driverId, setDriverId] = useState('');
   const [campaignId, setCampaignId] = useState('');
   const [expenseType, setExpenseType] = useState('');
   const [amount, setAmount] = useState('');
@@ -24,6 +53,16 @@ const ExpenseCreate = () => {
   const [submittedDate, setSubmittedDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Auto-set driver ID for drivers
+  useEffect(() => {
+    if (isDriver && drivers.length > 0) {
+      const driverRecord = drivers.find(d => d.email === user.email);
+      if (driverRecord) {
+        setDriverId(driverRecord.id.toString());
+      }
+    }
+  }, [isDriver, drivers, user.email]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -32,6 +71,7 @@ const ExpenseCreate = () => {
       const formData = new FormData();
       formData.append('expense_type', expenseType);
       formData.append('amount', amount);
+      if (driverId) formData.append('driver_id', driverId);
       if (campaignId) formData.append('campaign_id', campaignId);
       if (description) formData.append('description', description);
       if (billUrl) formData.append('bill_url', billUrl);
@@ -62,6 +102,7 @@ const ExpenseCreate = () => {
 
   useEffect(() => {
     if (existing) {
+      setDriverId(existing.driver_id ? String(existing.driver_id) : '');
       setCampaignId(existing.campaign_id ? String(existing.campaign_id) : '');
       setExpenseType(existing.expense_type || '');
       setAmount(existing.amount ? String(existing.amount) : '');
@@ -79,14 +120,27 @@ const ExpenseCreate = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Driver dropdown - only show for non-drivers */}
+            {!isDriver && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Driver (optional)</label>
+                <select value={driverId} onChange={(e) => setDriverId(e.target.value)} className="mt-1 block w-full border rounded-md p-2">
+                  <option value="">{driversLoading ? 'Loading drivers...' : 'Select driver'}</option>
+                  {drivers.map(d => <option key={d.id} value={d.id}>{d.name || d.phone}</option>)}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-slate-700">Campaign (optional)</label>
               <select value={campaignId} onChange={(e) => setCampaignId(e.target.value)} className="mt-1 block w-full border rounded-md p-2">
-                <option value="">{campaignsLoading ? 'Loading campaigns...' : 'Select campaign'}</option>
+                <option value="">{campaignsLoading ? 'Loading campaigns...' : (isDriver ? 'Select your assigned campaign' : 'Select campaign')}</option>
                 {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              {isDriver && campaigns.length === 0 && !campaignsLoading && (
+                <p className="text-sm text-gray-500 mt-1">No campaigns assigned to you</p>
+              )}
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-slate-700">Expense Type</label>
               <input value={expenseType} onChange={(e) => setExpenseType(e.target.value)} className="mt-1 block w-full border rounded-md p-2" required />

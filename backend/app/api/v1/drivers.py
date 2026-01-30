@@ -17,7 +17,7 @@ from sqlalchemy import select
 from app.database.connection import get_db
 from app.repositories.driver_repo import DriverRepository
 from app.services.driver_service import DriverService
-from app.schemas.driver import DriverCreate, DriverUpdate, DriverResponse
+from app.schemas.driver import DriverCreate, DriverUpdate, DriverResponse, ToggleDriverStatusRequest
 from app.models.driver import Driver
 from app.core.role_permissions import Permission
 from app.api.dependencies import require_permission, get_current_active_user
@@ -77,7 +77,8 @@ async def get_drivers(
             )
         drivers = await repo.get_by_vendor_async(db, vendor_id)
     else:
-        drivers = await repo.get_active_drivers(db)
+        # Admin and other roles should see all drivers (both active and inactive)
+        drivers = await repo.get_all_async(db)
 
     return [DriverResponse.model_validate(d) for d in drivers]
 
@@ -213,3 +214,48 @@ async def upload_driver_license_image(
         "driver_id": driver_id,
         "license_image": driver.license_image
     }
+
+# -------------------------------------------------------------------
+# Toggle Driver Status (Active/Inactive)
+# -------------------------------------------------------------------
+@router.patch("/{driver_id}/toggle-status", response_model=DriverResponse)
+async def toggle_driver_status(
+    driver_id: int,
+    status_data: ToggleDriverStatusRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_permission(Permission.DRIVER_UPDATE))
+):
+    """
+    Toggle driver active/inactive status with optional reason
+    
+    - Vendors can only toggle their own drivers
+    - Admins can toggle any driver
+    """
+    repo = DriverRepository()
+    driver = await repo.get_by_id(db, driver_id)
+
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    # Vendor isolation - vendors can only toggle their own drivers
+    if current_user["role"] == "vendor":
+        if driver.vendor_id != current_user.get("vendor_id"):
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot modify another vendor's driver"
+            )
+
+    # Update status
+    driver.is_active = status_data.is_active
+    
+    # Only set inactive_reason when deactivating
+    if not status_data.is_active:
+        driver.inactive_reason = status_data.inactive_reason or "Deactivated"
+    else:
+        driver.inactive_reason = None  # Clear reason when reactivating
+    
+    driver.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(driver)
+
+    return DriverResponse.model_validate(driver)

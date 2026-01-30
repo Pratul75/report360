@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Date, ForeignKey
+from sqlalchemy import Column, String, Date, ForeignKey, Boolean, Text
 from sqlalchemy.orm import relationship
 from app.models.base import Base, BaseModel
 from sqlalchemy import Integer
@@ -15,6 +15,8 @@ class Vehicle(Base, BaseModel):
     permit_validity = Column(Date)
     rc_image = Column(String(500))  # Path to RC document image
     insurance_image = Column(String(500))  # Path to insurance document image
+    is_active = Column(Boolean, default=True, nullable=False)
+    inactive_reason = Column(Text, nullable=True)
     
     # Relationships
     vendor = relationship("Vendor", back_populates="vehicles")

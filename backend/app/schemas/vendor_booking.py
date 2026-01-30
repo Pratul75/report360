@@ -1,7 +1,7 @@
 """Pydantic schemas for Vendor Driver Booking & Work Assignment"""
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import date, time, datetime
+from datetime import date, datetime
 from app.models.driver_assignment import AssignmentStatus, ApprovalStatus
 
 
@@ -12,13 +12,13 @@ class WorkAssignmentCreate(BaseModel):
     vehicle_id: int = Field(..., description="Vehicle ID from vendor's pool")
     assignment_date: date = Field(..., description="Date of assignment")
     
+    assignment_start_date: Optional[date] = Field(None, description="Start date of assignment for this campaign")
+    assignment_end_date: Optional[date] = Field(None, description="End date of assignment for this campaign")
+    
     work_title: str = Field(..., max_length=255, description="Type of work: Sampling, Promotion, Transport, etc.")
     work_description: Optional[str] = Field(None, description="Detailed work description")
     village_name: Optional[str] = Field(None, max_length=255, description="Village or location name")
     location_address: Optional[str] = Field(None, description="Full address")
-    
-    expected_start_time: Optional[time] = Field(None, description="Expected start time")
-    expected_end_time: Optional[time] = Field(None, description="Expected end time")
     
     remarks: Optional[str] = Field(None, description="Additional remarks")
     
@@ -29,12 +29,12 @@ class WorkAssignmentCreate(BaseModel):
                 "driver_id": 3,
                 "vehicle_id": 1,
                 "assignment_date": "2026-01-10",
+                "assignment_start_date": "2026-01-10",
+                "assignment_end_date": "2026-01-15",
                 "work_title": "Product Sampling",
                 "work_description": "Distribute product samples at village market",
                 "village_name": "Rampur",
                 "location_address": "Main Market, Near Bus Stand, Rampur",
-                "expected_start_time": "09:00:00",
-                "expected_end_time": "17:00:00",
                 "remarks": "Bring ice boxes for samples"
             }
         }
@@ -46,8 +46,8 @@ class WorkAssignmentUpdate(BaseModel):
     work_description: Optional[str] = None
     village_name: Optional[str] = Field(None, max_length=255)
     location_address: Optional[str] = None
-    expected_start_time: Optional[time] = None
-    expected_end_time: Optional[time] = None
+    assignment_start_date: Optional[date] = None
+    assignment_end_date: Optional[date] = None
     status: Optional[AssignmentStatus] = None
     remarks: Optional[str] = None
 
@@ -62,14 +62,13 @@ class WorkAssignmentResponse(BaseModel):
     vehicle_id: Optional[int]
     vehicle_number: Optional[str]
     assignment_date: date
+    assignment_start_date: Optional[date]
+    assignment_end_date: Optional[date]
     
     work_title: Optional[str]
     work_description: Optional[str]
     village_name: Optional[str]
     location_address: Optional[str]
-    
-    expected_start_time: Optional[time]
-    expected_end_time: Optional[time]
     actual_start_time: Optional[datetime]
     actual_end_time: Optional[datetime]
     

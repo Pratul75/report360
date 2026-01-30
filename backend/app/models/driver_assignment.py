@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Date, Time, ForeignKey, Enum as SQLEnum, DateTime
+from sqlalchemy import Column, String, Text, Date, ForeignKey, Enum as SQLEnum, DateTime
 from sqlalchemy.orm import relationship
 import enum
 from app.models.base import Base, BaseModel
@@ -25,10 +25,10 @@ class DriverAssignment(Base, BaseModel):
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="SET NULL"))
     vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="SET NULL"), index=True)
     
-    # Date and time
-    assignment_date = Column(Date, nullable=False, index=True)
-    expected_start_time = Column(Time, comment="Expected start time")
-    expected_end_time = Column(Time, comment="Expected end time")
+    # Assignment dates
+    assignment_date = Column(Date, nullable=False, index=True, comment="Date assignment was created")
+    assignment_start_date = Column(Date, nullable=True, comment="Start date of assignment for this campaign")
+    assignment_end_date = Column(Date, nullable=True, comment="End date of assignment for this campaign")
     actual_start_time = Column(DateTime, comment="Actual start time recorded by driver")
     actual_end_time = Column(DateTime, comment="Actual end time recorded by driver")
     

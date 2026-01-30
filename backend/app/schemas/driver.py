@@ -28,6 +28,7 @@ class DriverUpdate(BaseModel):
 class DriverResponse(DriverBase):
     id: int
     is_active: bool
+    inactive_reason: Optional[str] = None
     created_at: datetime
     vehicle_number: Optional[str] = None  # Vehicle number for display
     license_image: Optional[str] = None
@@ -35,3 +36,7 @@ class DriverResponse(DriverBase):
     
     class Config:
         from_attributes = True
+
+class ToggleDriverStatusRequest(BaseModel):
+    is_active: bool
+    inactive_reason: Optional[str] = None

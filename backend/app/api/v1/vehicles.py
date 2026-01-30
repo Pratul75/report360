@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse
+from datetime import datetime
+from app.schemas.vehicle import VehicleCreate, VehicleUpdate, VehicleResponse, ToggleVehicleStatusRequest
 from app.repositories.vehicle_repo import VehicleRepository
 from app.database.connection import get_db
 from app.core.role_permissions import Permission
@@ -42,8 +43,8 @@ async def get_vehicles(
             )
         vehicles = await repo.get_by_vendor_async(db, user_vendor_id)
     else:
-        # Admin and other roles see all vehicles
-        vehicles = await repo.get_active_vehicles(db)
+        # Admin and other roles see all vehicles (both active and inactive)
+        vehicles = await repo.get_all_async(db)
     
     return [VehicleResponse.model_validate(v) for v in vehicles]
 
@@ -103,3 +104,49 @@ async def delete_vehicle(
     # Soft delete
     await repo.delete(db, vehicle_id)
     return None
+
+# -------------------------------------------------------------------
+# Toggle Vehicle Status (Active/Inactive)
+# -------------------------------------------------------------------
+@router.patch("/{vehicle_id}/toggle-status", response_model=VehicleResponse)
+async def toggle_vehicle_status(
+    vehicle_id: int,
+    status_data: ToggleVehicleStatusRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_permission(Permission.VEHICLE_UPDATE))
+):
+    """
+    Toggle vehicle active/inactive status with optional reason
+    
+    - Vendors can only toggle their own vehicles
+    - Admins can toggle any vehicle
+    """
+    repo = VehicleRepository()
+    vehicle = await repo.get_by_id(db, vehicle_id)
+
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    # Vendor isolation - vendors can only toggle their own vehicles
+    if current_user["role"] == "vendor":
+        if vehicle.vendor_id != current_user.get("vendor_id"):
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot modify another vendor's vehicle"
+            )
+
+    # Update status
+    vehicle.is_active = status_data.is_active
+    
+    # Only set inactive_reason when deactivating
+    if not status_data.is_active:
+        vehicle.inactive_reason = status_data.inactive_reason or "Deactivated"
+    else:
+        vehicle.inactive_reason = None  # Clear reason when reactivating
+    
+    vehicle.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(vehicle)
+
+    return VehicleResponse.model_validate(vehicle)
+

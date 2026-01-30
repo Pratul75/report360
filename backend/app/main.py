@@ -83,7 +83,10 @@ app.include_router(analytics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ml_insights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(upload.router, prefix=settings.API_V1_PREFIX)
 app.include_router(godowns.router, prefix=settings.API_V1_PREFIX)
+
 app.include_router(godowns.inventory_router, prefix=settings.API_V1_PREFIX)
+from app.api.v1 import campaign_driver_workflow_router
+app.include_router(campaign_driver_workflow_router, prefix=f"{settings.API_V1_PREFIX}/daily-activity")
 
 @app.get("/health")
 async def health_check():

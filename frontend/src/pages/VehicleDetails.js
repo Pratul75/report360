@@ -38,9 +38,9 @@ const VehicleDetails = () => {
             variant="ghost"
             onClick={() => {
               if (location.state && location.state.from) {
-                navigate(location.state.from.pathname, { state: { activeTab: location.state.activeTab } });
+                navigate(location.state.from.pathname);
               } else {
-                navigate('/vendor-dashboard');
+                navigate('/vehicles');
               }
             }}
           >
@@ -51,6 +51,14 @@ const VehicleDetails = () => {
       <div className="grid grid-cols-1 gap-4">
         <div className="bg-white p-4 rounded shadow">
           <h3 className="font-semibold mb-2">Vehicle Details</h3>
+          <div><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            vehicle.is_active 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>{vehicle.is_active ? 'Active' : 'Inactive'}</span></div>
+          {vehicle.inactive_reason && !vehicle.is_active && (
+            <div className="mt-2"><strong>Reason for Inactivity:</strong> {vehicle.inactive_reason}</div>
+          )}
           <div><strong>Number:</strong> {vehicle.vehicle_number}</div>
           <div><strong>Type:</strong> {vehicle.vehicle_type || '-'}</div>
           <div><strong>Capacity:</strong> {vehicle.capacity || '-'}</div>

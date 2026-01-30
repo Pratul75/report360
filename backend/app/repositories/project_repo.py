@@ -1,8 +1,12 @@
-from sqlalchemy import select
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from typing import Dict, Any
 from app.repositories.base_repo import BaseRepository
 from app.models.project import Project
+from app.models.project_field import ProjectField
+import json
+from datetime import datetime, timezone
 
 class ProjectRepository(BaseRepository):
     def __init__(self):
@@ -26,7 +30,8 @@ class ProjectRepository(BaseRepository):
         query = query.options(
             selectinload(Project.campaigns),
             selectinload(Project.client),
-            selectinload(Project.cs_user)
+            selectinload(Project.cs_user),
+            selectinload(Project.fields)
         )
         
         result = await db.execute(query)
@@ -44,7 +49,8 @@ class ProjectRepository(BaseRepository):
         query = query.options(
             selectinload(Project.campaigns),
             selectinload(Project.client),
-            selectinload(Project.cs_user)
+            selectinload(Project.cs_user),
+            selectinload(Project.fields)
         )
         
         result = await db.execute(query)
@@ -58,7 +64,8 @@ class ProjectRepository(BaseRepository):
         query = query.options(
             selectinload(Project.campaigns),
             selectinload(Project.client),
-            selectinload(Project.cs_user)
+            selectinload(Project.cs_user),
+            selectinload(Project.fields)
         )
         
         result = await db.execute(query)
@@ -76,7 +83,8 @@ class ProjectRepository(BaseRepository):
         query = query.options(
             selectinload(Project.campaigns),
             selectinload(Project.client),
-            selectinload(Project.cs_user)
+            selectinload(Project.cs_user),
+            selectinload(Project.fields)
         )
         
         result = await db.execute(query)
@@ -85,3 +93,54 @@ class ProjectRepository(BaseRepository):
     async def get_active_projects(self, db: AsyncSession):
         """Get active projects"""
         return await self.get_all(db, {"status": "active"})
+        
+    async def create(self, db, data):
+        fields = data.pop("fields", [])
+
+        project = Project(**data)
+        db.add(project)
+        await db.commit()
+        await db.refresh(project)
+
+        for f in fields:
+            field = ProjectField(
+                project_id=project.id,
+                field_name=f["field_name"],
+                field_type=f["field_type"],
+                required=f.get("required", False),
+                options=json.dumps(f.get("options", []))
+            )
+            db.add(field)
+
+        await db.commit()
+        return project
+    
+    async def update(self, db: AsyncSession, id: int, data: Dict[str, Any]):
+        """Update project with fields handling"""
+        # Extract fields before any processing
+        fields = data.pop("fields", None)
+        
+        # Update project basic info
+        data['updated_at'] = datetime.now(timezone.utc)
+        stmt = update(Project).where(Project.id == id).values(**data)
+        await db.execute(stmt)
+        
+        # Handle fields if provided (even empty list)
+        if fields is not None:
+            # Delete existing fields
+            delete_stmt = delete(ProjectField).where(ProjectField.project_id == id)
+            await db.execute(delete_stmt)
+            
+            # Create new fields
+            for f in fields:
+                field = ProjectField(
+                    project_id=id,
+                    field_name=f["field_name"],
+                    field_type=f["field_type"],
+                    required=f.get("required", False),
+                    options=json.dumps(f.get("options", []))
+                )
+                db.add(field)
+        
+        await db.commit()
+        return await self.get_by_id(db, id)

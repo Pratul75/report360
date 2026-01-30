@@ -13,6 +13,7 @@ import WorkList from '../components/driver/WorkList';
 import VehicleCard from '../components/driver/VehicleCard';
 import AssignmentsList from '../components/vendor/AssignmentsList';
 import DriverAssignmentApproval from '../components/driver/DriverAssignmentApproval';
+import ActiveCampaignsPanel from '../components/driver/ActiveCampaignsPanel';
 
 const DriverDashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -519,6 +520,11 @@ const DriverDashboard = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Active Campaigns - Daily Activity Logging */}
+          {dashboardData?.driver && (
+            <ActiveCampaignsPanel driverId={dashboardData.driver.id} />
+          )}
 
           {/* No assignments message */}
           {assignments.length === 0 && (

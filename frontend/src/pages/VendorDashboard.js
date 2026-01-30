@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { vendorDashboardAPI } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { vendorDashboardAPI, driversAPI, vehiclesAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Users, Truck, FileText, DollarSign, Activity, Upload, UserPlus } from 'lucide-react';
+import { Users, Truck, FileText, DollarSign, Activity, Upload, UserPlus, Power } from 'lucide-react';
 import { useSmartNavigation } from '@/hooks/useSmartNavigation';
 import BackButton from '@/components/ui/BackButton';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import DriverBookingForm from '@/components/vendor/DriverBookingForm';
 import AssignmentsList from '@/components/vendor/AssignmentsList';
+import ToggleStatusModal from '@/components/common/ToggleStatusModal';
+import { toast } from 'react-hot-toast';
 
 import { useLocation } from 'react-router-dom';
 
 const VendorDashboard = () => {
   const { navigateTo } = useSmartNavigation();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
+  const [toggleModal, setToggleModal] = useState(null);
     // Restore tab from navigation state if present
     useEffect(() => {
       if (location.state && location.state.activeTab) {
@@ -36,6 +40,88 @@ const VendorDashboard = () => {
     queryKey: ['vendor-menu-counts'],
     queryFn: () => vendorDashboardAPI.getMenuCounts(),
   });
+
+  const toggleDriverStatusMutation = useMutation({
+    mutationFn: (data) => {
+      const payload = { 
+        is_active: data.is_active
+      };
+      if (data.inactive_reason) {
+        payload.inactive_reason = data.inactive_reason;
+      }
+      return driversAPI.toggleStatus(data.id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-menu-counts'] });
+      toast.success(toggleModal?.isActive ? 'Driver reactivated' : 'Driver deactivated');
+      setToggleModal(null);
+    },
+    onError: (error) => {
+      const errorMessage = 
+        typeof error.response?.data?.detail === 'string' 
+          ? error.response.data.detail 
+          : 'Failed to toggle driver status';
+      toast.error(errorMessage);
+    },
+  });
+
+  const toggleVehicleStatusMutation = useMutation({
+    mutationFn: (data) => {
+      const payload = { 
+        is_active: data.is_active
+      };
+      if (data.inactive_reason) {
+        payload.inactive_reason = data.inactive_reason;
+      }
+      return vehiclesAPI.toggleStatus(data.id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-menu-counts'] });
+      toast.success(toggleModal?.isActive ? 'Vehicle reactivated' : 'Vehicle deactivated');
+      setToggleModal(null);
+    },
+    onError: (error) => {
+      const errorMessage = 
+        typeof error.response?.data?.detail === 'string' 
+          ? error.response.data.detail 
+          : 'Failed to toggle vehicle status';
+      toast.error(errorMessage);
+    },
+  });
+
+  const handleToggleDriver = (driver) => {
+    setToggleModal({
+      type: 'driver',
+      driver,
+      isActive: driver.is_active,
+    });
+  };
+
+  const handleToggleVehicle = (vehicle) => {
+    setToggleModal({
+      type: 'vehicle',
+      vehicle,
+      isActive: vehicle.is_active,
+    });
+  };
+
+  const handleConfirmToggle = (statusData) => {
+    if (toggleModal.type === 'driver') {
+      toggleDriverStatusMutation.mutate({
+        id: toggleModal.driver.id,
+        is_active: !toggleModal.isActive,
+        inactive_reason: statusData.inactive_reason,
+      });
+    } else {
+      toggleVehicleStatusMutation.mutate({
+        id: toggleModal.vehicle.id,
+        is_active: !toggleModal.isActive,
+        inactive_reason: statusData.inactive_reason,
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -376,16 +462,41 @@ const VendorDashboard = () => {
                 <CardContent className="px-6 pt-6 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold">{vehicle.vehicle_number}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{vehicle.vehicle_number}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          vehicle.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {vehicle.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      {vehicle.inactive_reason && !vehicle.is_active && (
+                        <p className="text-xs text-slate-500 mb-2">
+                          Reason: {vehicle.inactive_reason}
+                        </p>
+                      )}
                       <p className="text-sm text-slate-600">{vehicle.vehicle_type}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigateTo(`/vehicles/${vehicle.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => handleToggleVehicle(vehicle)}
+                        title={vehicle.is_active ? 'Deactivate vehicle' : 'Reactivate vehicle'}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigateTo(`/vehicles/${vehicle.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -409,17 +520,42 @@ const VendorDashboard = () => {
                 <CardContent className="px-6 pt-6 pb-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-semibold">{driver.name}</h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{driver.name}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          driver.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {driver.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      {driver.inactive_reason && !driver.is_active && (
+                        <p className="text-xs text-slate-500 mb-2">
+                          Reason: {driver.inactive_reason}
+                        </p>
+                      )}
                       <p className="text-sm text-slate-600">{driver.phone}</p>
                       <p className="text-sm text-slate-600">License: {driver.license_number}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigateTo(`/drivers/${driver.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => handleToggleDriver(driver)}
+                        title={driver.is_active ? 'Deactivate driver' : 'Reactivate driver'}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigateTo(`/drivers/${driver.id}`, { state: { from: { pathname: window.location.pathname }, activeTab } })}
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -505,6 +641,18 @@ const VendorDashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {toggleModal && (
+        <ToggleStatusModal
+          isOpen={!!toggleModal}
+          onClose={() => setToggleModal(null)}
+          onConfirm={handleConfirmToggle}
+          itemName={toggleModal.type === 'driver' ? toggleModal.driver.name : toggleModal.vehicle.vehicle_number}
+          itemType={toggleModal.type === 'driver' ? 'driver' : 'vehicle'}
+          isActive={toggleModal.isActive}
+          isLoading={toggleDriverStatusMutation.isPending || toggleVehicleStatusMutation.isPending}
+        />
+      )}
     </div>
   );
 };

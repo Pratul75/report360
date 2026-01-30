@@ -12,8 +12,7 @@ class VehicleRepository(BaseRepository):
     async def get_by_id(self, db: AsyncSession, id: int):
         """Get vehicle by ID with vendor relationship loaded"""
         query = select(Vehicle).where(
-            Vehicle.id == id,
-            Vehicle.is_active == True
+            Vehicle.id == id
         ).options(selectinload(Vehicle.vendor))
         result = await db.execute(query)
         return result.scalar_one_or_none()
@@ -26,11 +25,16 @@ class VehicleRepository(BaseRepository):
         result = await db.execute(query)
         return result.scalars().all()
     
+    async def get_all_async(self, db: AsyncSession):
+        """Get all vehicles including inactive (async) with vendor loaded"""
+        query = select(Vehicle).options(selectinload(Vehicle.vendor))
+        result = await db.execute(query)
+        return result.scalars().all()
+    
     async def get_by_vendor_async(self, db: AsyncSession, vendor_id: int):
-        """Get vehicles by vendor ID (async)"""
+        """Get vehicles by vendor ID (async) - includes both active and inactive"""
         query = select(Vehicle).where(
-            Vehicle.vendor_id == vendor_id,
-            Vehicle.is_active == True
+            Vehicle.vendor_id == vendor_id
         ).options(selectinload(Vehicle.vendor))
         result = await db.execute(query)
         return result.scalars().all()

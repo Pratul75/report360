@@ -31,9 +31,9 @@ const DriverDetails = () => {
             variant="ghost"
             onClick={() => {
               if (location.state && location.state.from) {
-                navigate(location.state.from.pathname, { state: { activeTab: location.state.activeTab } });
+                navigate(location.state.from.pathname);
               } else {
-                navigate('/vendor-dashboard');
+                navigate('/drivers');
               }
             }}
           >
@@ -44,6 +44,14 @@ const DriverDetails = () => {
       <div className="grid grid-cols-1 gap-4">
         <div className="bg-white p-4 rounded shadow">
           <h3 className="font-semibold mb-2">Driver Details</h3>
+          <div><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+            driver.is_active 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>{driver.is_active ? 'Active' : 'Inactive'}</span></div>
+          {driver.inactive_reason && !driver.is_active && (
+            <div className="mt-2"><strong>Reason for Inactivity:</strong> {driver.inactive_reason}</div>
+          )}
           <div><strong>Name:</strong> {driver.name}</div>
           <div><strong>Phone:</strong> {driver.phone || '-'}</div>
           <div><strong>Email:</strong> {driver.email || '-'}</div>

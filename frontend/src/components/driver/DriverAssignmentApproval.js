@@ -144,13 +144,16 @@ const DriverAssignmentApproval = ({ assignment, onActionComplete }) => {
             </div>
           )}
 
-          {(assignment.expected_start_time || assignment.expected_end_time) && (
+          {(assignment.assignment_start_date || assignment.assignment_end_date) && (
             <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
+              <Calendar className="w-4 h-4 text-blue-600 mt-0.5" />
               <div>
-                <p className="text-xs text-gray-600">Time</p>
+                <p className="text-xs text-gray-600">Assignment Period</p>
                 <p className="text-sm font-medium">
-                  {assignment.expected_start_time || '--:--'} to {assignment.expected_end_time || '--:--'}
+                  {assignment.assignment_start_date 
+                    ? new Date(assignment.assignment_start_date).toLocaleDateString() 
+                    : 'Start date TBD'} 
+                  {assignment.assignment_end_date && ` to ${new Date(assignment.assignment_end_date).toLocaleDateString()}`}
                 </p>
               </div>
             </div>
