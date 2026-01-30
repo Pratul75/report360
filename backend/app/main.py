@@ -13,7 +13,7 @@ from app.api.v1 import (
     auth, dashboard, clients, projects, campaigns,
     vendors, vehicles, drivers, promoters, expenses, reports, users, roles, promoter_activities,
     vendor_dashboard, invoices, payments, client_servicing_dashboard, driver_dashboard, vendor_booking,
-    ml_insights, accounts, operations, analytics, upload, godowns
+    ml_insights, accounts, operations, analytics, upload, godowns , driver_forms
 )
 
 @asynccontextmanager
@@ -83,7 +83,7 @@ app.include_router(analytics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(ml_insights.router, prefix=settings.API_V1_PREFIX)
 app.include_router(upload.router, prefix=settings.API_V1_PREFIX)
 app.include_router(godowns.router, prefix=settings.API_V1_PREFIX)
-
+app.include_router(driver_forms.router, prefix=settings.API_V1_PREFIX)
 app.include_router(godowns.inventory_router, prefix=settings.API_V1_PREFIX)
 from app.api.v1 import campaign_driver_workflow_router
 app.include_router(campaign_driver_workflow_router, prefix=f"{settings.API_V1_PREFIX}/daily-activity")
