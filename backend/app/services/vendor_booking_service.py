@@ -196,6 +196,7 @@ class VendorBookingService:
             village_name=assignment_data.get("village_name"),
             location_address=assignment_data.get("location_address"),
             remarks=assignment_data.get("remarks"),
+            project_id=assignment_data.get("project_id"),
             status=AssignmentStatus.ASSIGNED,
             assigned_by_id=assigned_by_user_id,
             is_active=1
