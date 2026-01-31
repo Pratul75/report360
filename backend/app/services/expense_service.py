@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.repositories.expense_repo import ExpenseRepository
 from app.schemas.expense import ExpenseCreate, ExpenseUpdate, ExpenseResponse, ExpenseStatus, SubmitterDetails
 from app.models.user import User
+from backend.app.models.expense import Expense
 
 class ExpenseService:
     def __init__(self):
@@ -26,6 +27,21 @@ class ExpenseService:
                     role=user.role
                 )
         return expense
+    async def get_by_campaign(
+        self,
+        db: AsyncSession,
+        campaign_id: int,
+        driver_id: int | None = None
+    ):
+        query = select(Expense).where(
+            Expense.campaign_id == campaign_id
+        )
+
+        if driver_id:
+            query = query.where(Expense.driver_id == driver_id)
+
+        result = await db.execute(query)
+        return result.scalars().all()
     
     async def create_expense(self, db: AsyncSession, expense_data: ExpenseCreate, user_id: int = None) -> ExpenseResponse:
         """Create a new expense

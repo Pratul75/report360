@@ -80,24 +80,26 @@ async def create_expense(
 
 @router.get("", response_model=List[ExpenseResponse])
 async def get_expenses(
+    campaign_id: int,
+    driver_id: int | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_permission(Permission.EXPENSE_READ))
 ):
-    """Get all expenses - filtered by role
-    
-    - Admin/Accountant: Can see all expenses
-    - Driver/Operations: Can only see their own expenses
-    """
     service = ExpenseService()
     user_role = current_user.get('role')
     user_id = current_user.get('user_id')
-    
-    # Admin and Accountant can see all expenses
+
+    # Admin / Accounts → campaign ke sab
     if user_role in ['admin', 'accounts']:
-        return await service.get_all_expenses(db)
-    
-    # Other roles can only see their own submitted expenses
-    return await service.get_user_expenses(db, user_id)
+        return await service.get_by_campaign(db, campaign_id, driver_id)
+
+    # Driver → sirf apna
+    return await service.get_by_campaign(
+        db,
+        campaign_id,
+        driver_id=user_id
+    )
+
 
 @router.patch("/{expense_id}/approve", response_model=ExpenseResponse)
 async def approve_expense(
