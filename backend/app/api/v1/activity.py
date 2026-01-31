@@ -10,31 +10,41 @@ UPLOAD_DIR = "uploads/activities"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("")
+@router.post("")
 async def save_activity(
     request: Request,
     photo: UploadFile = File(None),
     db: AsyncSession = Depends(get_db)
 ):
     form = await request.form()
-    data = dict(form)
 
-    # SAFE extraction (never crash)
-    project_id = int(data.pop("project_id", 0))
-    campaign_id = int(data.pop("campaign_id", 0))
-    latitude = float(data.pop("latitude", 0))
-    longitude = float(data.pop("longitude", 0))
-    location_address = data.pop("location_address", None)
+    # Proper extraction
+    project_id = int(form.get("project_id", 0))
+    campaign_id = int(form.get("campaign_id", 0))
+    latitude = float(form.get("latitude", 0))
+    longitude = float(form.get("longitude", 0))
+    location_address = form.get("location_address")
 
-    # Photo handling
+    # Build dynamic payload safely
+    payload = {}
+    for key, value in form.items():
+        if key not in [
+            "project_id",
+            "campaign_id",
+            "latitude",
+            "longitude",
+            "location_address",
+            "photo"
+        ]:
+            payload[key] = value
+
+    # Photo
     photo_path = None
     if photo:
         filename = f"{uuid.uuid4()}.jpg"
         photo_path = f"{UPLOAD_DIR}/{filename}"
         with open(photo_path, "wb") as f:
             f.write(await photo.read())
-
-    # Remaining dynamic fields
-    payload = data
 
     activity = Activity(
         project_id=project_id,
