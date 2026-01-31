@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app.repositories.expense_repo import ExpenseRepository
 from app.schemas.expense import ExpenseCreate, ExpenseUpdate, ExpenseResponse, ExpenseStatus, SubmitterDetails
 from app.models.user import User
-from backend.app.models.expense import Expense
+from app.models.expense import Expense
 
 class ExpenseService:
     def __init__(self):
