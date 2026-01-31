@@ -7,6 +7,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.core.logging import logger
 from app.database.connection import init_db, close_db
+from app.api.v1.activity import router as activity_router
 
 # Import API routers
 from app.api.v1 import (
@@ -57,6 +58,8 @@ else:
     logger.warning(f"Uploads directory not found at {uploads_dir}")
 
 # Include API routers
+app.include_router(activity_router)
+
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
