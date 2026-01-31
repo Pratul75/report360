@@ -16,21 +16,16 @@ async def save_activity(
     db: AsyncSession = Depends(get_db)
 ):
     form = await request.form()
+    data = dict(form)
 
-    # 🔥 IMPORTANT: convert properly
-    data = {}
-    for key, value in form.items():
-        if key != "photo":
-            data[key] = value
+    # SAFE extraction (never crash)
+    project_id = int(data.pop("project_id", 0))
+    campaign_id = int(data.pop("campaign_id", 0))
+    latitude = float(data.pop("latitude", 0))
+    longitude = float(data.pop("longitude", 0))
+    location_address = data.pop("location_address", None)
 
-    print("FINAL DATA:", data)  # debug ke liye
-
-    project_id = int(data.pop("project_id"))
-    campaign_id = int(data.pop("campaign_id"))
-    latitude = float(data.pop("latitude"))
-    longitude = float(data.pop("longitude"))
-    location_address = data.pop("location_address")
-
+    # Photo handling
     photo_path = None
     if photo:
         filename = f"{uuid.uuid4()}.jpg"
@@ -38,7 +33,8 @@ async def save_activity(
         with open(photo_path, "wb") as f:
             f.write(await photo.read())
 
-    payload = data  # baaki saare dynamic fields
+    # Remaining dynamic fields
+    payload = data
 
     activity = Activity(
         project_id=project_id,
@@ -52,18 +48,11 @@ async def save_activity(
 
     db.add(activity)
     await db.commit()
-    await db.refresh(activity)
 
     return {
         "status": "success",
-        "id": activity.id,
-        "saved_data": {
-            "project_id": project_id,
-            "campaign_id": campaign_id,
-            "latitude": latitude,
-            "longitude": longitude,
-            "location_address": location_address,
-            "payload": payload,
-            "photo": photo_path
-        }
+        "project_id": project_id,
+        "campaign_id": campaign_id,
+        "payload": payload,
+        "photo": photo_path
     }
