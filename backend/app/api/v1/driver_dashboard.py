@@ -162,7 +162,7 @@ async def get_my_assigned_work(
         target_date = date.today()
     
     try:
-        assignments = await DriverDashboardService.get_assigned_work(db, driver_id, target_date)
+        assignments = await DriverDashboardService.get_assigned_work(db, driver_id)
         return {"assignments": assignments, "date": str(target_date)}
     except Exception as e:
         raise HTTPException(500, f"Error fetching assignments: {str(e)}")

@@ -145,14 +145,12 @@ class DriverDashboardService:
     async def get_assigned_work(
         db: AsyncSession,
         driver_id: int,
-        target_date: date
     ) -> List[Dict[str, Any]]:
         """Get driver's assigned work for specific date"""
         assignments_query = select(DriverAssignment).where(
             and_(
                 DriverAssignment.driver_id == driver_id,
                 DriverAssignment.is_active == 1,
-                DriverAssignment.assignment_date == target_date
             )
         ).order_by(DriverAssignment.created_at.desc())
         
@@ -182,10 +180,12 @@ class DriverDashboardService:
             assignments_list.append({
                 "id": assignment.id,
                 "campaign_name": campaign_name,
+                "campaign_id": assignment.campaign_id,
+                "project_id": assignment.project_id,
                 "project_name": project_name,
                 "task_description": assignment.task_description,
                 "assignment_date": str(assignment.assignment_date),
-                "status": assignment.status.value,
+                "status": assignment.status,
                 "remarks": assignment.remarks,
             })
         
