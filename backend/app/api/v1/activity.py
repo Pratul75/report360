@@ -2,52 +2,79 @@ from fastapi import APIRouter, Request, UploadFile, File, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.connection import get_db
 from app.models.activity import Activity
+from app.models.activity_file import ActivityFile
 import uuid, os
 
 router = APIRouter(prefix="/activities", tags=["Activities"])
-
 UPLOAD_DIR = "uploads/activities"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+@router.get("")
+async def get_activities_by_campaign(
+    campaign_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    # 1. Get all activities of campaign
+    result = await db.execute(
+        select(Activity).where(Activity.campaign_id == campaign_id)
+    )
+    activities = result.scalars().all()
 
-@router.post("")
+    response = []
+
+    for activity in activities:
+        # 2. Get files of this activity
+        files_result = await db.execute(
+            select(ActivityFile).where(ActivityFile.activity_id == activity.id)
+        )
+        files = files_result.scalars().all()
+
+        grouped = defaultdict(list)
+
+        for f in files:
+            grouped[f.field_name].append({
+                "url": f"/uploads/activities/{os.path.basename(f.file_path)}",
+                "type": f.file_type
+            })
+
+        response.append({
+            "id": activity.id,
+            "project_id": activity.project_id,
+            "campaign_id": activity.campaign_id,
+            "latitude": activity.latitude,
+            "longitude": activity.longitude,
+            "location_address": activity.location_address,
+            "fields": activity.payload,   # dynamic text
+            "media": grouped,             # dynamic images
+            "created_at": activity.created_at
+        })
+
+    return response
 @router.post("")
 async def save_activity(
     request: Request,
-    photo: UploadFile = File(None),
     db: AsyncSession = Depends(get_db)
 ):
     form = await request.form()
+
     print("======== RAW FORM DATA ========")
-    for key, value in form.items():
-        print(key, "=>", value)
+    for k, v in form.multi_items():
+        print(k, v)
     print("================================")
-    # Proper extraction
-    project_id = int(form.get("project_id", 0))
-    campaign_id = int(form.get("campaign_id", 0))
-    latitude = float(form.get("latitude", 0))
-    longitude = float(form.get("longitude", 0))
-    location_address = form.get("location_address")
 
-    # Build dynamic payload safely
-    payload = {}
-    for key, value in form.items():
-        if key not in [
-            "project_id",
-            "campaign_id",
-            "latitude",
-            "longitude",
-            "location_address",
-            "photo"
-        ]:
-            payload[key] = value
+    data = {}
+    files = []
 
-    # Photo
-    photo_path = None
-    if photo:
-        filename = f"{uuid.uuid4()}.jpg"
-        photo_path = f"{UPLOAD_DIR}/{filename}"
-        with open(photo_path, "wb") as f:
-            f.write(await photo.read())
+    for key, value in form.multi_items():
+        if isinstance(value, UploadFile):
+            files.append((key, value))
+        else:
+            data[key] = value
+
+    project_id = int(data.pop("project_id", 0))
+    campaign_id = int(data.pop("campaign_id", 0))
+    latitude = float(data.pop("latitude", 0))
+    longitude = float(data.pop("longitude", 0))
+    location_address = data.pop("location_address", None)
 
     activity = Activity(
         project_id=project_id,
@@ -55,17 +82,33 @@ async def save_activity(
         latitude=latitude,
         longitude=longitude,
         location_address=location_address,
-        payload=payload,
-        photo_path=photo_path
+        payload=data
     )
 
     db.add(activity)
+    await db.flush()  # 👈 activity.id mil jaayega
+
+    # Save all files (dynamic names, multiple)
+    for field_name, file in files:
+        filename = f"{uuid.uuid4()}_{file.filename}"
+        path = f"{UPLOAD_DIR}/{filename}"
+
+        with open(path, "wb") as f:
+            f.write(await file.read())
+
+        file_row = ActivityFile(
+            activity_id=activity.id,
+            field_name=field_name,
+            file_path=path,
+            file_type=file.content_type
+        )
+        db.add(file_row)
+
     await db.commit()
 
     return {
         "status": "success",
-        "project_id": project_id,
-        "campaign_id": campaign_id,
-        "payload": payload,
-        "photo": photo_path
+        "activity_id": activity.id,
+        "fields": data,
+        "files_count": len(files)
     }
