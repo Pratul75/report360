@@ -47,7 +47,7 @@ async def get_activities_by_campaign(
             "location_address": activity.location_address,
             "fields": activity.payload,   # dynamic text
             "media": grouped,             # dynamic images
-            "created_at": activity.created_at
+            
         })
 
     return response
