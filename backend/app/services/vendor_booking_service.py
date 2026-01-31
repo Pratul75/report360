@@ -233,6 +233,7 @@ class VendorBookingService:
             "id": assignment.id,
             "campaign_id": assignment.campaign_id,
             "campaign_name": campaign.name if campaign else None,
+            "project_id": assignment.project_id,
             "driver_id": assignment.driver_id,
             "driver_name": driver.name if driver else "Unknown",
             "vehicle_id": assignment.vehicle_id,
