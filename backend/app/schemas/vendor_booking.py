@@ -11,7 +11,7 @@ class WorkAssignmentCreate(BaseModel):
     driver_id: int = Field(..., description="Driver ID from vendor's pool")
     vehicle_id: int = Field(..., description="Vehicle ID from vendor's pool")
     assignment_date: date = Field(..., description="Date of assignment")
-    
+    project_id: Optional[int] = Field(None, description="Project ID associated with the campaign")
     assignment_start_date: Optional[date] = Field(None, description="Start date of assignment for this campaign")
     assignment_end_date: Optional[date] = Field(None, description="End date of assignment for this campaign")
     
@@ -28,6 +28,7 @@ class WorkAssignmentCreate(BaseModel):
                 "campaign_id": 1,
                 "driver_id": 3,
                 "vehicle_id": 1,
+                "project_id": 1,
                 "assignment_date": "2026-01-10",
                 "assignment_start_date": "2026-01-10",
                 "assignment_end_date": "2026-01-15",
@@ -58,6 +59,7 @@ class WorkAssignmentResponse(BaseModel):
     campaign_id: Optional[int]
     campaign_name: Optional[str]
     driver_id: int
+    project_id: Optional[int]
     driver_name: str
     vehicle_id: Optional[int]
     vehicle_number: Optional[str]
