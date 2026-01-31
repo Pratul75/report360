@@ -4,7 +4,7 @@ from app.database.connection import get_db
 from app.models.activity import Activity
 from app.models.activity_file import ActivityFile
 from sqlalchemy import select
-
+from collections import defaultdict
 import uuid, os
 
 router = APIRouter(prefix="/activities", tags=["Activities"])
