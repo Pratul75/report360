@@ -58,17 +58,13 @@ async def save_activity(
 ):
     form = await request.form()
 
-    print("======== RAW FORM DATA ========")
-    for k, v in form.multi_items():
-        print(k, v)
-    print("================================")
-
     data = {}
     files = []
 
-    for key, value in form.multi_items():
-        if isinstance(value, UploadFile):
-            files.append((key, value))
+    # अलग-अलग करो fields और files
+    for key, value in form.items():
+        if hasattr(value, "filename"):   # ये file है
+            files.append(value)
         else:
             data[key] = value
 
@@ -78,39 +74,34 @@ async def save_activity(
     longitude = float(data.pop("longitude", 0))
     location_address = data.pop("location_address", None)
 
+    # बाकी सब dynamic fields
+    payload = data
+
+    # Multiple images save
+    saved_files = []
+    for file in files:
+        filename = f"{uuid.uuid4()}_{file.filename}"
+        path = f"{UPLOAD_DIR}/{filename}"
+        with open(path, "wb") as f:
+            f.write(await file.read())
+        saved_files.append(path)
+
     activity = Activity(
         project_id=project_id,
         campaign_id=campaign_id,
         latitude=latitude,
         longitude=longitude,
         location_address=location_address,
-        payload=data
+        payload=payload,
+        photo_path=saved_files  # list of images
     )
 
     db.add(activity)
-    await db.flush()  # 👈 activity.id mil jaayega
-
-    # Save all files (dynamic names, multiple)
-    for field_name, file in files:
-        filename = f"{uuid.uuid4()}_{file.filename}"
-        path = f"{UPLOAD_DIR}/{filename}"
-
-        with open(path, "wb") as f:
-            f.write(await file.read())
-
-        file_row = ActivityFile(
-            activity_id=activity.id,
-            field_name=field_name,
-            file_path=path,
-            file_type=file.content_type
-        )
-        db.add(file_row)
-
     await db.commit()
 
     return {
         "status": "success",
-        "activity_id": activity.id,
-        "fields": data,
-        "files_count": len(files)
+        "payload": payload,
+        "images": saved_files
     }
+
