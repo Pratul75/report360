@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.connection import get_db
 from app.models.activity import Activity
 from app.models.activity_file import ActivityFile
+from sqlalchemy import select
+
 import uuid, os
 
 router = APIRouter(prefix="/activities", tags=["Activities"])
