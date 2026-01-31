@@ -11,4 +11,4 @@ class Activity(Base):
     longitude = Column(Float)
     location_address = Column(Text)
     payload = Column(JSON)
-    photo_path = Column(String)
+    photo_path =  Column(JSON)  
