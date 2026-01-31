@@ -4,6 +4,7 @@ from app.database.connection import get_db
 from app.models.activity import Activity
 import uuid, os
 
+
 router = APIRouter(prefix="/activities", tags=["Activities"])
 
 UPLOAD_DIR = "uploads/activities"

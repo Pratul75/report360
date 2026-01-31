@@ -58,7 +58,7 @@ else:
     logger.warning(f"Uploads directory not found at {uploads_dir}")
 
 # Include API routers
-app.include_router(activity_router)
+app.include_router(activity_router, prefix=settings.API_V1_PREFIX)
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(dashboard.router, prefix=settings.API_V1_PREFIX)
