@@ -17,7 +17,10 @@ async def save_activity(
     db: AsyncSession = Depends(get_db)
 ):
     form = await request.form()
-
+    print("======== RAW FORM DATA ========")
+    for key, value in form.items():
+        print(key, "=>", value)
+    print("================================")
     # Proper extraction
     project_id = int(form.get("project_id", 0))
     campaign_id = int(form.get("campaign_id", 0))
