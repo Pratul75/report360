@@ -61,9 +61,8 @@ async def save_activity(
     data = {}
     files = []
 
-    # अलग-अलग करो fields और files
     for key, value in form.items():
-        if hasattr(value, "filename"):   # ये file है
+        if hasattr(value, "filename"):
             files.append(value)
         else:
             data[key] = value
@@ -74,34 +73,48 @@ async def save_activity(
     longitude = float(data.pop("longitude", 0))
     location_address = data.pop("location_address", None)
 
-    # बाकी सब dynamic fields
     payload = data
 
-    # Multiple images save
-    saved_files = []
-    for file in files:
-        filename = f"{uuid.uuid4()}_{file.filename}"
-        path = f"{UPLOAD_DIR}/{filename}"
-        with open(path, "wb") as f:
-            f.write(await file.read())
-        saved_files.append(path)
-
+    # 1. Save activity first
     activity = Activity(
         project_id=project_id,
         campaign_id=campaign_id,
         latitude=latitude,
         longitude=longitude,
         location_address=location_address,
-        payload=payload,
-        photo_path=saved_files  # list of images
+        payload=payload
     )
-
     db.add(activity)
+    await db.commit()
+    await db.refresh(activity)
+
+    # 2. Save multiple files
+    saved_files = []
+
+    for file in files:
+        filename = f"{uuid.uuid4()}_{file.filename}"
+        path = f"{UPLOAD_DIR}/{filename}"
+
+        with open(path, "wb") as f:
+            f.write(await file.read())
+
+        file_row = ActivityFile(
+            activity_id=activity.id,
+            field_name=file.filename.split(".")[0],  # dynamic name
+            file_path=path,
+            file_type=file.content_type
+        )
+        db.add(file_row)
+
+        saved_files.append(path)
+
     await db.commit()
 
     return {
         "status": "success",
+        "activity_id": activity.id,
         "payload": payload,
         "images": saved_files
     }
+
 
