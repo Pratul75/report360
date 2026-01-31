@@ -26,6 +26,7 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
     work_description: '',
     village_name: '',
     location_address: '',
+    
     remarks: ''
   });
 
@@ -42,7 +43,8 @@ const DriverBookingForm = ({ campaignId, campaignName, vendorId, onSuccess, onCa
       setFormData(prev => ({
         ...prev,
         assignment_start_date: campaignDetails.start_date,
-        assignment_end_date: campaignDetails.end_date
+        assignment_end_date: campaignDetails.end_date,
+        project_id: campaignDetails.project_id || ''
       }));
     }
   }, [campaignDetails]);
